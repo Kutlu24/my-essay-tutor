@@ -12,7 +12,7 @@ import json
 import time
 
 from .config import get_settings
-from .models import GradingResult, GrammarError
+from .models import CriteriaScores, CriterionScore, GradingResult, GrammarError
 
 LANGUAGE_NAMES = {"de": "German", "en": "English", "fr": "French"}
 
@@ -29,14 +29,25 @@ _PROMPT_TEMPLATE = """You are an expert {language} language teacher grading a st
 The student was asked to write at the {target_level} level. CEFR level descriptors for reference:
 {descriptors}
 
-Grade the essay below. Return ONLY a JSON object (no markdown fences, no commentary) matching exactly this schema:
+Grade the essay below using this four-criterion rubric, 12 points each (same rubric at every CEFR level, calibrated against the target level {target_level} each time):
+- vocabulary (Wortschatz): range and precision of vocabulary for the target level.
+- coherence (roter Faden): logical flow, paragraphing, connectors -- does the text read as one connected argument/narrative.
+- grammar (Grammatik): grammatical accuracy and range of structures for the target level.
+- content_relevance (Inhalt): how well the content addresses the topic/title and task.
+
+Return ONLY a JSON object (no markdown fences, no commentary) matching exactly this schema:
 {{
   "grammar_errors": [
     {{"original": "<exact span from the essay>", "correction": "<corrected form>", "explanation": "<short reason, in {language}>", "category": "<e.g. verb conjugation, article/gender, word order, spelling, preposition>"}}
   ],
   "achieved_level": "A1"|"A2"|"B1"|"B2"|"C1",
   "level_confidence": "below"|"at"|"above",
-  "score_out_of_100": <integer, calibrated against the target level {target_level}>,
+  "criteria": {{
+    "vocabulary": {{"score": <integer 0-12>, "comment": "<1 sentence, in {language}>"}},
+    "coherence": {{"score": <integer 0-12>, "comment": "<1 sentence, in {language}>"}},
+    "grammar": {{"score": <integer 0-12>, "comment": "<1 sentence, in {language}>"}},
+    "content_relevance": {{"score": <integer 0-12>, "comment": "<1 sentence, in {language}>"}}
+  }},
   "strengths": ["..."],
   "weaknesses": ["..."],
   "overall_feedback": "2-4 sentences of constructive feedback, written directly to the student, in {language}."
@@ -45,7 +56,7 @@ Grade the essay below. Return ONLY a JSON object (no markdown fences, no comment
 Rules:
 - Quote exact substrings from the essay in "original" so they can be located and highlighted.
 - Find every grammar, spelling and syntax error, however small.
-- Score realistically: flawless writing at the target level scores 85-100; systematic errors well below the target level score under 50.
+- Score each criterion realistically against the target level {target_level}: flawless work at that level scores 10-12 on a criterion; systematic weakness scores under 6.
 - If the essay text looks garbled or clearly broken by OCR (isolated nonsense characters, no coherent words), say so plainly in overall_feedback instead of inventing errors for text that likely isn't what the student wrote.
 """
 
@@ -139,6 +150,19 @@ def grade_essay(text: str, language_code: str, target_level: str) -> GradingResu
 
     data = caller(prompt, text)
 
+    criteria = CriteriaScores(
+        vocabulary=CriterionScore(**data["criteria"]["vocabulary"]),
+        coherence=CriterionScore(**data["criteria"]["coherence"]),
+        grammar=CriterionScore(**data["criteria"]["grammar"]),
+        content_relevance=CriterionScore(**data["criteria"]["content_relevance"]),
+    )
+    # Derived, not trusted from the model's own arithmetic: sum of the four
+    # 12-point criteria, scaled to /100 (48 points max -> x100/48).
+    criteria_total = (
+        criteria.vocabulary.score + criteria.coherence.score + criteria.grammar.score + criteria.content_relevance.score
+    )
+    score_out_of_100 = round(criteria_total * 100 / 48)
+
     return GradingResult(
         language=language_code,
         target_level=target_level,
@@ -146,7 +170,8 @@ def grade_essay(text: str, language_code: str, target_level: str) -> GradingResu
         grammar_errors=[GrammarError(**e) for e in data["grammar_errors"]],
         achieved_level=data["achieved_level"],
         level_confidence=data["level_confidence"],
-        score_out_of_100=int(data["score_out_of_100"]),
+        criteria=criteria,
+        score_out_of_100=score_out_of_100,
         strengths=data["strengths"],
         weaknesses=data["weaknesses"],
         overall_feedback=data["overall_feedback"],

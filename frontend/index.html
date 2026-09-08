@@ -149,6 +149,16 @@
 
   .feedback-block { background: var(--paper); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 16px 18px; font-size: 0.96rem; margin-bottom: 24px; }
 
+  .criteria-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+  .criterion-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--paper); }
+  .criterion-card .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .criterion-card .label { font-weight: 600; font-size: 0.92rem; }
+  .criterion-card .val { font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink-soft); flex-shrink: 0; }
+  .criterion-bar-track { height: 6px; border-radius: 999px; background: var(--accent-soft); overflow: hidden; margin-bottom: 8px; }
+  .criterion-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+  .criterion-card .comment { font-size: 0.85rem; color: var(--ink-soft); }
+  @media (max-width: 520px) { .criteria-grid { grid-template-columns: 1fr; } }
+
   .sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
   .sw-grid h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; color: var(--ink-soft); }
   .sw-grid ul { margin: 0; padding-left: 18px; font-size: 0.9rem; }
@@ -254,6 +264,9 @@
 
     <div class="feedback-block" id="overall-feedback"></div>
 
+    <p class="errors-title">Criteria (12 pts each, 48 total)</p>
+    <div class="criteria-grid" id="criteria-grid"></div>
+
     <div class="sw-grid">
       <div>
         <h3>Strengths</h3>
@@ -273,12 +286,19 @@
     </div>
   </section>
 
-  <footer>my-essay-tutor &middot; TrOCR extraction, MCP-orchestrated grammar &amp; CEFR grading</footer>
+  <footer>my-essay-tutor &middot; vision-LLM extraction, MCP-orchestrated grammar &amp; CEFR grading</footer>
 </div>
 
 <script>
 (function () {
   const state = { file: null, lang: null, level: null };
+
+  const CRITERIA_LABELS = {
+    de: { vocabulary: 'Wortschatz', coherence: 'Roter Faden', grammar: 'Grammatik', content_relevance: 'Inhalt' },
+    en: { vocabulary: 'Vocabulary', coherence: 'Coherence & Flow', grammar: 'Grammar', content_relevance: 'Content & Topic' },
+    fr: { vocabulary: 'Vocabulaire', coherence: 'Cohérence', grammar: 'Grammaire', content_relevance: 'Contenu' },
+  };
+  const CRITERIA_ORDER = ['vocabulary', 'coherence', 'grammar', 'content_relevance'];
 
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('file-input');
@@ -415,6 +435,39 @@
     badge.textContent = r.achieved_level + ' · ' + (labelMap[r.level_confidence] || r.level_confidence);
 
     document.getElementById('overall-feedback').textContent = r.overall_feedback;
+
+    const criteriaGrid = document.getElementById('criteria-grid');
+    criteriaGrid.innerHTML = '';
+    const labels = CRITERIA_LABELS[r.language] || CRITERIA_LABELS.en;
+    CRITERIA_ORDER.forEach(key => {
+      const c = r.criteria[key];
+      const card = document.createElement('div');
+      card.className = 'criterion-card';
+
+      const row = document.createElement('div');
+      row.className = 'row';
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = labels[key];
+      const val = document.createElement('span');
+      val.className = 'val';
+      val.textContent = c.score + ' / 12';
+      row.append(label, val);
+
+      const track = document.createElement('div');
+      track.className = 'criterion-bar-track';
+      const fill = document.createElement('div');
+      fill.className = 'criterion-bar-fill';
+      fill.style.width = Math.max(0, Math.min(100, (c.score / 12) * 100)) + '%';
+      track.appendChild(fill);
+
+      const comment = document.createElement('div');
+      comment.className = 'comment';
+      comment.textContent = c.comment;
+
+      card.append(row, track, comment);
+      criteriaGrid.appendChild(card);
+    });
 
     const strengths = document.getElementById('strengths-list');
     strengths.innerHTML = '';

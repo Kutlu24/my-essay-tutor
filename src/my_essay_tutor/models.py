@@ -8,6 +8,21 @@ class GrammarError(BaseModel):
     category: str
 
 
+class CriterionScore(BaseModel):
+    score: int  # 0-12
+    comment: str
+
+
+class CriteriaScores(BaseModel):
+    """Four-criterion rubric (Wortschatz / roter Faden / Grammatik / Inhalt),
+    12 points each, 48 total -- same rubric used across every CEFR level."""
+
+    vocabulary: CriterionScore
+    coherence: CriterionScore
+    grammar: CriterionScore
+    content_relevance: CriterionScore
+
+
 class GradingResult(BaseModel):
     language: str
     target_level: str
@@ -15,6 +30,7 @@ class GradingResult(BaseModel):
     grammar_errors: list[GrammarError]
     achieved_level: str
     level_confidence: str  # "below" | "at" | "above"
+    criteria: CriteriaScores
     score_out_of_100: int
     strengths: list[str]
     weaknesses: list[str]

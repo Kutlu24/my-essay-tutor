@@ -25,7 +25,8 @@ mcp = FastMCP("my-essay-tutor")
 
 @mcp.tool()
 def extract_essay_text(file_base64: str, is_pdf: bool = False) -> str:
-    """Extract handwritten or typed text from a student essay page.
+    """Extract handwritten or typed text from a student essay page, via a
+    vision LLM (see ocr.py).
 
     file_base64: base64-encoded JPEG/PNG image, or PDF bytes if is_pdf=True.
     is_pdf: set True when file_base64 decodes to a PDF rather than an image.

@@ -15,9 +15,13 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-opus-5"
 
-    # Handwriting/print OCR (Hugging Face Inference API, TrOCR)
-    hf_api_token: str = ""
-    hf_trocr_model: str = "microsoft/trocr-large-handwritten"
+    # Handwriting/print text extraction (vision LLM, not a local HTR model --
+    # see ocr.py for why)
+    ocr_provider: str = "gemini"  # "glm" | "gemini" -- glm-4.5v needs a paid GLM
+    # resource package (confirmed: text chat completions work on a free GLM key,
+    # vision returns "Insufficient balance", error 1113); Gemini's vision models
+    # are covered by the same free-tier key already used elsewhere this session.
+    ocr_model: str = "glm-4.5v"
 
     max_upload_mb: int = 10
 

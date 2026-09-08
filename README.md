@@ -10,9 +10,8 @@ frontend/index.html  (upload -> review transcription -> results)
         v
 FastAPI backend (src/my_essay_tutor/api/app.py)
         |
-        +--> ocr.py        text extraction (TrOCR via Hugging Face's free Inference API)
-        |      segmentation.py   classical line-splitting so multi-line pages don't
-        |                        get fed to TrOCR as one blob (see docstring for why)
+        +--> ocr.py        text extraction via a vision LLM (GLM by default, Gemini as
+        |                  an alternative -- see docstring for why this isn't TrOCR/Kraken/PyLaia)
         |      pdf_utils.py      PDF page -> image (pypdfium2)
         |
         +--> grading.py     grammar-error + CEFR scoring via an LLM (GLM by default)
@@ -25,15 +24,27 @@ MCP client (Claude Desktop, another agent) can call `extract_essay_text` and
 student-facing flow, rather than round-tripping through a spawned MCP subprocess per
 request &mdash; two consumption paths, one implementation.
 
-### Why TrOCR (not Kraken or PyLaia)
+### Why a vision LLM, not TrOCR/Kraken/PyLaia
 
-Of the three open-source HTR models considered, only TrOCR has a free **hosted**
-inference path (Hugging Face's Inference API) with no local model weights. Kraken and
-PyLaia would need a resident pytorch process on the web server &mdash; the same kind of
-local ML load that already OOM-killed the DSG Compliance project on Render's 512MB
-free tier. TrOCR's tradeoff: its public checkpoint is trained on English handwriting
-(IAM), so accuracy on German/French will be visibly weaker until a multilingual or
-per-language fine-tuned checkpoint is swapped in via `HF_TROCR_MODEL`.
+v1 of this project used TrOCR through Hugging Face's free Inference API, chosen
+because it was the only one of the three open-source HTR models under consideration
+with a free **hosted** path (no local model weights on the web server &mdash; Kraken
+and PyLaia would need a resident pytorch process, the same kind of local ML load that
+already OOM-killed the DSG Compliance project on Render's 512MB free tier).
+
+That path closed: HF's free serverless inference tier was cut down to a $0.10/month
+credit allowance in 2026, not viable for real traffic. `ocr.py` now sends the essay
+page directly to a vision-capable LLM instead of a dedicated HTR model. This keeps the
+original property that mattered (no local model weights, no OOM risk), with no
+separate line-segmentation step needed since a vision LLM reads a full page at once
+rather than one line at a time.
+
+Extraction defaults to **Gemini** (`OCR_PROVIDER=gemini`), not GLM: confirmed live
+that GLM's `glm-4.5v` vision model needs a paid GLM resource package even on a key
+where GLM's text models (grading) work fine on the free tier -- it fails with
+`"Insufficient balance or no resource package"` (error 1113). Gemini's vision models
+are covered by the same free-tier key already used elsewhere this session. Set
+`OCR_PROVIDER=glm` instead if the GLM account is topped up.
 
 ## Setup
 
@@ -43,8 +54,8 @@ cp .env.example .env
 ```
 
 Fill in `.env`:
-- `GLM_API_KEY` &mdash; grading LLM (z.ai)
-- `HF_API_TOKEN` &mdash; free token from https://huggingface.co/settings/tokens, used for TrOCR extraction
+- `GLM_API_KEY` &mdash; grading (z.ai); also works for extraction if `OCR_PROVIDER=glm` and the account has a resource package for vision
+- `GEMINI_API_KEY` &mdash; extraction (default `OCR_PROVIDER=gemini`)
 
 ## Run locally
 
@@ -57,16 +68,12 @@ Open http://127.0.0.1:8000/
 ## Deploy
 
 `render.yaml` is a Render Blueprint. Push to GitHub, create a Blueprint instance on
-Render pointing at the repo, then set `GLM_API_KEY` and `HF_API_TOKEN` in the
+Render pointing at the repo, then set `GLM_API_KEY` and `GEMINI_API_KEY` in the
 service's Environment tab (marked `sync: false` so they aren't committed).
 
 ## Known limitations (v1)
 
-- Line segmentation is a classical ink-density heuristic, not a learned segmenter
-  (see `segmentation.py`). Works well for neatly-spaced handwriting; degrades on
-  heavily slanted or overlapping lines.
-- TrOCR's handwriting accuracy is English-centric; German/French handwritten input
-  should be reviewed carefully at the "review transcription" step before grading.
-- Typed/printed compositions (scanned or exported PDF) generally transcribe far more
-  reliably than handwriting, since they don't depend on cursive/print handwriting
-  recognition at all.
+- Handwriting transcription is never perfect from any engine; the frontend has a
+  "review transcription" step before grading for exactly this reason.
+- Typed/printed compositions (scanned or exported PDF) generally transcribe more
+  reliably than handwriting.

@@ -1,81 +1,119 @@
-"""Handwriting/print text extraction via TrOCR, hosted on Hugging Face's
-free Inference API.
+"""Handwriting/print text extraction via a vision-capable LLM.
 
-Of the three open-source HTR models considered (Kraken, PyLaia, TrOCR),
-TrOCR is the one deployed here: it is the only one with a ready, free
-hosted-inference path (no local model weights, no local torch process),
-which matters because this app targets Render's 512MB free tier -- a
-budget that has already failed once this session under a locally-loaded
-ML model. Kraken and PyLaia have no equivalent hosted endpoint and expect
-a model checkpoint fine-tuned for the target handwriting/script, so they
-are left as a documented upgrade path (see segmentation.py) rather than
-built in for v1.
+v1 targeted TrOCR through Hugging Face's Inference API. That path closed:
+HF's free serverless inference tier was cut down to a $0.10/month credit
+allowance in 2026, not viable for real traffic. This module now uses a
+vision LLM instead (GLM's glm-4.5v by default, Gemini as an alternative),
+which:
+  - needs no locally-loaded model weights -- keeps the same OOM-avoidance
+    property TrOCR was originally chosen for on Render's free tier
+  - reuses the same GLM/Gemini accounts already relied on for grading
+  - reads a full essay page directly, rather than needing a separate
+    line-segmentation pass first -- TrOCR was a line-level recognizer;
+    a vision LLM handles a whole page at once, which also benchmarks
+    more accurately in practice (frontier multimodal models now
+    outperform dedicated open-source HTR models like TrOCR on
+    handwriting recognition).
 
-Known limitation, stated plainly: TrOCR's public "handwritten" checkpoint
-is trained on the IAM dataset, which is English. Accuracy on German/French
-handwriting will be visibly weaker than on English until a multilingual or
-per-language fine-tuned checkpoint is swapped in via HF_TROCR_MODEL.
+Known limitation: handwriting transcription is never perfect in any of
+these approaches -- the frontend has a "review transcription" step before
+grading for exactly this reason.
 """
 
 from __future__ import annotations
 
+import base64
 import io
 import time
 
-import httpx
 from PIL import Image
 
 from .config import get_settings
-from .segmentation import segment_lines
 
-_HF_URL = "https://api-inference.huggingface.co/models/{model}"
-_MAX_LINES_PER_PAGE = 60
+_TRANSCRIBE_PROMPT = (
+    "Transcribe the handwritten or printed text in this image exactly as written, "
+    "including any spelling or grammar mistakes -- do not correct anything. "
+    "Return only the transcribed text, with line breaks matching the original. "
+    "No commentary, no markdown formatting, no quotation marks around the text."
+)
 
 
 class OCRError(RuntimeError):
     pass
 
 
-def _call_trocr(image_bytes: bytes) -> str:
+def _image_to_jpeg_bytes(image: Image.Image) -> bytes:
+    buf = io.BytesIO()
+    image.convert("RGB").save(buf, format="JPEG", quality=92)
+    return buf.getvalue()
+
+
+def _call_glm(image_bytes: bytes) -> str:
+    from openai import OpenAI
+
     settings = get_settings()
-    if not settings.hf_api_token:
-        raise OCRError(
-            "HF_API_TOKEN is not configured. Create a free token at "
-            "https://huggingface.co/settings/tokens and set it in .env"
-        )
+    if not settings.glm_api_key:
+        raise OCRError("GLM_API_KEY is not configured")
 
-    url = _HF_URL.format(model=settings.hf_trocr_model)
-    headers = {"Authorization": f"Bearer {settings.hf_api_token}"}
+    client = OpenAI(api_key=settings.glm_api_key, base_url="https://api.z.ai/api/paas/v4/")
+    data_url = "data:image/jpeg;base64," + base64.b64encode(image_bytes).decode("ascii")
 
+    last_err: Exception | None = None
     for attempt in range(4):
-        resp = httpx.post(url, headers=headers, content=image_bytes, timeout=60.0)
-        if resp.status_code == 503:
-            # Model is cold-starting on HF's side; this is expected on first use.
-            time.sleep(min(5 * (attempt + 1), 20))
-            continue
-        if resp.status_code == 429:
-            time.sleep(min(5 * (attempt + 1), 20))
-            continue
-        resp.raise_for_status()
-        data = resp.json()
-        if isinstance(data, list) and data and "generated_text" in data[0]:
-            return data[0]["generated_text"].strip()
-        raise OCRError(f"Unexpected OCR response shape: {data}")
+        try:
+            resp = client.chat.completions.create(
+                model=settings.ocr_model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "image_url", "image_url": {"url": data_url}},
+                            {"type": "text", "text": _TRANSCRIBE_PROMPT},
+                        ],
+                    }
+                ],
+                temperature=0.0,
+            )
+            return resp.choices[0].message.content.strip()
+        except Exception as e:
+            last_err = e
+            time.sleep(5 * (attempt + 1))
+    raise OCRError(f"GLM OCR failed after retries: {last_err}")
 
-    raise OCRError("OCR model did not become ready in time, please retry")
+
+def _call_gemini(image_bytes: bytes) -> str:
+    from google import genai
+    from google.genai import types
+
+    settings = get_settings()
+    if not settings.gemini_api_key:
+        raise OCRError("GEMINI_API_KEY is not configured")
+
+    client = genai.Client(api_key=settings.gemini_api_key)
+
+    last_err: Exception | None = None
+    for attempt in range(4):
+        try:
+            resp = client.models.generate_content(
+                model=settings.gemini_model,
+                contents=[
+                    _TRANSCRIBE_PROMPT,
+                    types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                ],
+            )
+            return resp.text.strip()
+        except Exception as e:
+            last_err = e
+            time.sleep(5 * (attempt + 1))
+    raise OCRError(f"Gemini OCR failed after retries: {last_err}")
+
+
+_CALLERS = {"glm": _call_glm, "gemini": _call_gemini}
 
 
 def extract_text_from_page(image: Image.Image) -> str:
-    lines = segment_lines(image)[:_MAX_LINES_PER_PAGE]
-
-    texts: list[str] = []
-    for i, line_img in enumerate(lines):
-        buf = io.BytesIO()
-        line_img.convert("RGB").save(buf, format="JPEG", quality=92)
-        text = _call_trocr(buf.getvalue())
-        if text:
-            texts.append(text)
-        if i < len(lines) - 1:
-            time.sleep(0.2)  # stay well under HF's free-tier rate cap
-
-    return "\n".join(texts)
+    settings = get_settings()
+    caller = _CALLERS.get(settings.ocr_provider)
+    if caller is None:
+        raise OCRError(f"Unknown ocr_provider: {settings.ocr_provider}")
+    return caller(_image_to_jpeg_bytes(image))

@@ -1,0 +1,26 @@
+[project]
+name = "my-essay-tutor"
+version = "0.1.0"
+description = "Multi-language (DE/EN/FR) essay tutor: handwriting/PDF extraction + CEFR grammar grading, orchestrated via MCP"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "python-multipart>=0.0.9",
+    "httpx>=0.27",
+    "openai>=1.40",
+    "google-genai>=0.3",
+    "pillow>=10.0",
+    "numpy>=1.26",
+    "pypdfium2>=4.30",
+    "mcp>=1.2,<2",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

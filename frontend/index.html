@@ -34,7 +34,7 @@
     font-family: var(--font-body);
     line-height: 1.55;
   }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 20px 90px; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 48px 32px 90px; }
   header { text-align: center; margin-bottom: 40px; }
   .kicker {
     display: inline-flex; align-items: center; gap: 8px;
@@ -48,7 +48,7 @@
     font-size: clamp(2.1rem, 5.5vw, 2.9rem); margin: 0 0 12px; letter-spacing: -0.01em;
     text-wrap: balance;
   }
-  .subtitle { color: var(--ink-soft); font-size: 1.02rem; max-width: 480px; margin: 0 auto; }
+  .subtitle { color: var(--ink-soft); font-size: 1.02rem; max-width: 560px; margin: 0 auto; }
 
   .steps { display: flex; justify-content: center; gap: 6px; margin: 28px 0 36px; font-family: var(--font-mono); font-size: 0.72rem; }
   .step-pill {
@@ -157,6 +157,11 @@
   .criterion-bar-track { height: 6px; border-radius: 999px; background: var(--accent-soft); overflow: hidden; margin-bottom: 8px; }
   .criterion-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
   .criterion-card .comment { font-size: 0.85rem; color: var(--ink-soft); }
+  @media (max-width: 640px) {
+    .wrap { padding: 32px 16px 60px; }
+    .card { padding: 22px; }
+    .result-head { flex-wrap: wrap; }
+  }
   @media (max-width: 520px) { .criteria-grid { grid-template-columns: 1fr; } }
 
   .sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }

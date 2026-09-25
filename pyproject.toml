@@ -2,7 +2,7 @@
 name = "my-essay-tutor"
 version = "0.1.0"
 description = "Multi-language (DE/EN/FR) essay tutor: handwriting/PDF extraction + CEFR grammar grading, orchestrated via MCP"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<4.0"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",

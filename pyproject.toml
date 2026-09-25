@@ -15,7 +15,20 @@ dependencies = [
     "pillow>=10.0",
     "pypdfium2>=4.30",
     "mcp>=1.2,<2",
+    # Structured, validated grading output instead of hand-rolled JSON-fence
+    # stripping (grading.py) - the [google-genai] extra pulls in jsonref,
+    # required for structured output against the Gemini provider path.
+    "instructor[google-genai]>=1.17",
+    # Independent, non-LLM grammar cross-check (grammar_check.py) - off by
+    # default (Settings.enable_grammar_crosscheck), always via the hosted
+    # Public API, never the local-server mode (see grammar_check.py's
+    # module docstring for why). The package itself is a lightweight HTTP
+    # client at this version pin, not a JVM bundle.
+    "language-tool-python>=3.4",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
 
 [build-system]
 requires = ["setuptools>=68"]

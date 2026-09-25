@@ -35,3 +35,8 @@ class GradingResult(BaseModel):
     strengths: list[str]
     weaknesses: list[str]
     overall_feedback: str
+    # LanguageTool's independent rule-based match list, or None if
+    # Settings.enable_grammar_crosscheck is off (the default) - see
+    # grammar_check.py. Not reconciled against grammar_errors above; the
+    # two lists are shown side by side, not merged.
+    grammar_crosscheck: list[dict] | None = None

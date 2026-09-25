@@ -46,6 +46,14 @@ where GLM's text models (grading) work fine on the free tier -- it fails with
 are covered by the same free-tier key already used elsewhere this session. Set
 `OCR_PROVIDER=glm` instead if the GLM account is topped up.
 
+## Validated grading output, and an independent grammar cross-check (opt-in)
+
+`grading.py` used to parse each provider's grading response with a hand-rolled ```json-fence stripper and no schema validation - a malformed or incomplete response just crashed with a raw `json.loads` error. It now wraps every provider (GLM, Gemini, Anthropic) with [`instructor`](https://github.com/instructor-ai/instructor), so `response_model=_GradingResponse` returns an already-validated Pydantic object, with `instructor`'s own retry-with-the-validation-error-fed-back loop kicking in if a response doesn't match. Verified against the real GLM and Gemini APIs (2026-09-25). One real compatibility gap found and fixed along the way: GLM's default tool-calling mode returned the nested `criteria` field as a JSON-encoded *string* instead of an object, which failed validation outright - the GLM path now uses `instructor.Mode.JSON` instead of the default `Mode.TOOLS` to avoid it. The Gemini path needs the `instructor[google-genai]` extra (pulls in `jsonref`) for structured output to work at all.
+
+A second, independent, non-LLM grammar cross-check via [`language_tool_python`](https://github.com/jxmorris12/language_tool_python) also now exists in `grammar_check.py`, since the grading pipeline is otherwise one LLM call asked to both find every error and score the essay - nothing else checks whether that error list is complete or correct. **Off by default** (`ENABLE_GRAMMAR_CROSSCHECK=true` to turn it on) - it's a ready-to-use capability, not yet wired to influence grading itself; when enabled, `GradingResult.grammar_crosscheck` carries LanguageTool's own match list alongside (not merged into) the LLM's `grammar_errors`. **Uses `language_tool_python`'s hosted Public API by default, never its local-server mode automatically** - the local mode spins up a resident Java process, exactly the kind of local ML/JVM load this project's own OCR redesign (see "Why a vision LLM" above) was chosen specifically to avoid after DSG Compliance was OOM-killed on Render's free tier. The Public API's shared free-tier rate limit means real-world use should expect occasional `RateLimitError`s - not wired to retry automatically yet.
+
+A second, separate opt-in - `GRAMMAR_CROSSCHECK_LOCAL_SERVER=true` - switches to the local-server constructor instead, but only takes effect once `ENABLE_GRAMMAR_CROSSCHECK` is already on (flipping this alone does nothing). Included now, off by default, for a future deploy target with real memory headroom - **do not enable this on Render's free tier**, that's the exact failure mode the Public API default exists to avoid.
+
 ## Setup
 
 ```

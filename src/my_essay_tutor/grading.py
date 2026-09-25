@@ -8,11 +8,37 @@ unlike the Gemini free tier.
 
 from __future__ import annotations
 
-import json
 import time
+from typing import Literal
+
+from pydantic import BaseModel
 
 from .config import get_settings
-from .models import CriteriaScores, CriterionScore, GradingResult, GrammarError
+from .grammar_check import grammar_crosscheck
+from .models import CriteriaScores, GradingResult, GrammarError
+
+
+class _GradingResponse(BaseModel):
+    """The exact shape the grading prompt asks for (see _PROMPT_TEMPLATE's
+    JSON schema below) - passed to instructor as `response_model` so a
+    provider's structured-output call returns this directly, validated,
+    with malformed/incomplete output (wrong achieved_level string, a
+    missing field, etc.) triggering instructor's own retry-with-the-
+    validation-error-fed-back-to-the-model loop instead of a bare
+    json.loads() crash. Deliberately not GradingResult itself: this model
+    covers only what the LLM actually produces - GradingResult additionally
+    carries language/target_level/extracted_text/score_out_of_100, which
+    grade_essay() derives itself (score_out_of_100 in particular is
+    computed from the criteria, never trusted from the model - see the
+    comment at its call site)."""
+
+    grammar_errors: list[GrammarError]
+    achieved_level: Literal["A1", "A2", "B1", "B2", "C1"]
+    level_confidence: Literal["below", "at", "above"]
+    criteria: CriteriaScores
+    strengths: list[str]
+    weaknesses: list[str]
+    overall_feedback: str
 
 LANGUAGE_NAMES = {"de": "German", "en": "English", "fr": "French"}
 
@@ -61,76 +87,80 @@ Rules:
 """
 
 
-def _parse_json_response(raw: str) -> dict:
-    raw = raw.strip()
-    if raw.startswith("```"):
-        raw = raw.split("```", 2)[1]
-        raw = raw.removeprefix("json").strip()
-    return json.loads(raw)
-
-
 def _build_prompt(language: str, target_level: str) -> str:
     return _PROMPT_TEMPLATE.format(language=language, target_level=target_level, descriptors=CEFR_DESCRIPTORS)
 
 
-def _call_glm(prompt: str, essay_text: str) -> dict:
+def _call_glm(prompt: str, essay_text: str) -> _GradingResponse:
+    import instructor
     from openai import OpenAI
 
     settings = get_settings()
-    client = OpenAI(api_key=settings.glm_api_key, base_url="https://api.z.ai/api/paas/v4/")
+    # Mode.JSON, not the default Mode.TOOLS: GLM's tool-calling returns
+    # nested objects (the `criteria` field) as a JSON-encoded STRING
+    # instead of an actual object, which fails _GradingResponse's
+    # validation outright (Pydantic: "Input should be an object, got
+    # str") - a real compatibility gap in GLM's OpenAI-compatible tool-use
+    # mode for nested schemas, found by running this against the real API,
+    # not from documentation. Mode.JSON avoids tool-calling entirely.
+    client = instructor.from_openai(
+        OpenAI(api_key=settings.glm_api_key, base_url="https://api.z.ai/api/paas/v4/"),
+        mode=instructor.Mode.JSON,
+    )
 
     last_err: Exception | None = None
     for attempt in range(5):
         try:
-            resp = client.chat.completions.create(
+            return client.chat.completions.create(
                 model=settings.glm_model,
+                response_model=_GradingResponse,
                 messages=[
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": essay_text},
                 ],
                 temperature=0.2,
             )
-            return _parse_json_response(resp.choices[0].message.content)
-        except Exception as e:  # rate limit (1302) / content filter (1301) / json errors -- all transient
+        except Exception as e:  # rate limit (1302) / content filter (1301) / validation failures -- all transient
             last_err = e
             time.sleep(5 * (attempt + 1))
     raise RuntimeError(f"GLM grading failed after retries: {last_err}")
 
 
-def _call_gemini(prompt: str, essay_text: str) -> dict:
+def _call_gemini(prompt: str, essay_text: str) -> _GradingResponse:
+    import instructor
     from google import genai
 
     settings = get_settings()
-    client = genai.Client(api_key=settings.gemini_api_key)
+    client = instructor.from_genai(genai.Client(api_key=settings.gemini_api_key))
 
     last_err: Exception | None = None
     for attempt in range(5):
         try:
-            resp = client.models.generate_content(
+            return client.chat.completions.create(
                 model=settings.gemini_model,
-                contents=f"{prompt}\n\nESSAY:\n{essay_text}",
+                response_model=_GradingResponse,
+                messages=[{"role": "user", "content": f"{prompt}\n\nESSAY:\n{essay_text}"}],
             )
-            return _parse_json_response(resp.text)
         except Exception as e:
             last_err = e
             time.sleep(5 * (attempt + 1))
     raise RuntimeError(f"Gemini grading failed after retries: {last_err}")
 
 
-def _call_anthropic(prompt: str, essay_text: str) -> dict:
+def _call_anthropic(prompt: str, essay_text: str) -> _GradingResponse:
     import anthropic
+    import instructor
 
     settings = get_settings()
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    client = instructor.from_anthropic(anthropic.Anthropic(api_key=settings.anthropic_api_key))
 
-    resp = client.messages.create(
+    return client.chat.completions.create(
         model=settings.anthropic_model,
+        response_model=_GradingResponse,
         max_tokens=4096,
         system=prompt,
         messages=[{"role": "user", "content": essay_text}],
     )
-    raw = "".join(block.text for block in resp.content if block.type == "text")
-    return _parse_json_response(raw)
 
 
 _CALLERS = {"glm": _call_glm, "gemini": _call_gemini, "anthropic": _call_anthropic}
@@ -148,14 +178,9 @@ def grade_essay(text: str, language_code: str, target_level: str) -> GradingResu
     if caller is None:
         raise ValueError(f"Unknown grading_provider: {settings.grading_provider}")
 
-    data = caller(prompt, text)
+    data = caller(prompt, text)  # a validated _GradingResponse, not a raw dict
 
-    criteria = CriteriaScores(
-        vocabulary=CriterionScore(**data["criteria"]["vocabulary"]),
-        coherence=CriterionScore(**data["criteria"]["coherence"]),
-        grammar=CriterionScore(**data["criteria"]["grammar"]),
-        content_relevance=CriterionScore(**data["criteria"]["content_relevance"]),
-    )
+    criteria = data.criteria
     # Derived, not trusted from the model's own arithmetic: sum of the four
     # 12-point criteria, scaled to /100 (48 points max -> x100/48).
     criteria_total = (
@@ -167,12 +192,13 @@ def grade_essay(text: str, language_code: str, target_level: str) -> GradingResu
         language=language_code,
         target_level=target_level,
         extracted_text=text,
-        grammar_errors=[GrammarError(**e) for e in data["grammar_errors"]],
-        achieved_level=data["achieved_level"],
-        level_confidence=data["level_confidence"],
+        grammar_errors=data.grammar_errors,
+        achieved_level=data.achieved_level,
+        level_confidence=data.level_confidence,
         criteria=criteria,
         score_out_of_100=score_out_of_100,
-        strengths=data["strengths"],
-        weaknesses=data["weaknesses"],
-        overall_feedback=data["overall_feedback"],
+        strengths=data.strengths,
+        weaknesses=data.weaknesses,
+        overall_feedback=data.overall_feedback,
+        grammar_crosscheck=grammar_crosscheck(text, language_code),
     )

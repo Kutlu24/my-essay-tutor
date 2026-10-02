@@ -23,7 +23,7 @@ app.add_middleware(
 # Frontend lives in the repo checkout during development and inside the
 # installed package (my_essay_tutor.frontend) when pip-installed.
 _DEV_FRONTEND = Path(__file__).resolve().parents[3] / "frontend"
-_PKG_FRONTEND = Path(__file__).resolve().parents[2] / "frontend"
+_PKG_FRONTEND = Path(__file__).resolve().parent / "frontend"
 _FRONTEND_DIR = _DEV_FRONTEND if _DEV_FRONTEND.exists() else _PKG_FRONTEND
 if _FRONTEND_DIR.exists():
     app.mount("/ui", StaticFiles(directory=str(_FRONTEND_DIR), html=True), name="ui")

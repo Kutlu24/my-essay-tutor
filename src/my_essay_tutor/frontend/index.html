@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Essay Tutor</title>
+<meta name="description" content="Upload a handwritten or typed composition, pick a language and CEFR level, and get grammar feedback with a level score.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #faf6ef;
+    --paper-raised: #ffffff;
+    --ink: #1f2b4d;
+    --ink-soft: #4d5a7c;
+    --ink-faint: #8991ab;
+    --line: #e4ddcf;
+    --accent: #8a3324;
+    --accent-soft: #f3e3dd;
+    --good: #2f6b4f;
+    --good-soft: #e2f0e7;
+    --warn: #a8721a;
+    --warn-soft: #faedd6;
+    --font-display: "Source Serif 4", Georgia, serif;
+    --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    background-image: radial-gradient(900px 420px at 50% -8%, rgba(138,51,36,0.06), transparent 60%);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.55;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 48px 32px 90px; }
+  header { text-align: center; margin-bottom: 40px; }
+  .kicker {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--accent);
+    background: var(--accent-soft); border: 1px solid rgba(138,51,36,0.18);
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 18px;
+  }
+  h1 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(2.1rem, 5.5vw, 2.9rem); margin: 0 0 12px; letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .subtitle { color: var(--ink-soft); font-size: 1.02rem; max-width: 560px; margin: 0 auto; }
+
+  .steps { display: flex; justify-content: center; gap: 6px; margin: 28px 0 36px; font-family: var(--font-mono); font-size: 0.72rem; }
+  .step-pill {
+    padding: 5px 12px; border-radius: 999px; color: var(--ink-faint);
+    background: var(--paper-raised); border: 1px solid var(--line); letter-spacing: 0.04em;
+  }
+  .step-pill.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .step-pill.done { color: var(--good); border-color: var(--good); background: var(--good-soft); }
+
+  .card {
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 16px;
+    padding: 32px; box-shadow: 0 1px 2px rgba(31,43,77,0.04);
+  }
+  .card + .card { margin-top: 20px; }
+  .card h2 { font-family: var(--font-display); font-size: 1.35rem; margin: 0 0 6px; }
+  .hint { color: var(--ink-faint); font-size: 0.88rem; margin: 0 0 22px; }
+
+  .field-label { font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px; }
+
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .pill-btn {
+    font-family: var(--font-body); font-size: 0.92rem; font-weight: 500;
+    padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--paper); color: var(--ink-soft); cursor: pointer; transition: all .12s;
+  }
+  .pill-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .pill-btn.selected { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  .dropzone {
+    border: 2px dashed var(--line); border-radius: 14px; padding: 36px 20px;
+    text-align: center; cursor: pointer; transition: border-color .12s, background .12s;
+    margin-bottom: 8px;
+  }
+  .dropzone:hover, .dropzone.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .dropzone .icon { font-size: 1.8rem; margin-bottom: 8px; }
+  .dropzone .primary { font-weight: 600; }
+  .dropzone .secondary { color: var(--ink-faint); font-size: 0.85rem; margin-top: 4px; }
+  #file-input { display: none; }
+  .file-chip {
+    display: none; align-items: center; gap: 10px; font-size: 0.88rem;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 14px; margin-top: 12px;
+  }
+  .file-chip.visible { display: flex; }
+  .file-chip button { margin-left: auto; border: none; background: none; color: var(--accent); cursor: pointer; font-size: 0.82rem; }
+
+  .btn {
+    font-family: var(--font-body); font-weight: 600; font-size: 0.95rem;
+    padding: 12px 22px; border-radius: 10px; border: none; cursor: pointer;
+    background: var(--ink); color: #fff; transition: opacity .12s;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost { background: none; color: var(--ink-soft); border: 1px solid var(--line); }
+  .btn-row { display: flex; gap: 10px; margin-top: 22px; align-items: center; }
+
+  textarea#extracted-text {
+    width: 100%; min-height: 220px; font-family: var(--font-body); font-size: 1rem;
+    color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+    resize: vertical; background: var(--paper);
+  }
+  textarea#extracted-text:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .spinner {
+    display: none; align-items: center; gap: 10px; color: var(--ink-soft); font-size: 0.9rem; margin-top: 16px;
+  }
+  .spinner.visible { display: flex; }
+  .spinner .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: var(--accent);
+    animation: pulse 1.1s infinite ease-in-out;
+  }
+  @keyframes pulse { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .spinner .dot { animation: none; } }
+
+  .error-banner {
+    display: none; background: var(--warn-soft); border: 1px solid rgba(168,114,26,0.3);
+    color: var(--warn); border-radius: 10px; padding: 12px 16px; font-size: 0.88rem; margin-top: 16px;
+  }
+  .error-banner.visible { display: block; }
+
+  /* Results */
+  .result-head { display: flex; align-items: center; gap: 20px; margin-bottom: 28px; }
+  .score-ring {
+    flex-shrink: 0; width: 92px; height: 92px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    border: 6px solid var(--accent-soft);
+  }
+  .score-ring .num { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; }
+  .score-ring .of100 { font-size: 0.62rem; color: var(--ink-faint); font-family: var(--font-mono); }
+  .level-line { font-size: 0.85rem; color: var(--ink-soft); margin: 0 0 6px; }
+  .level-badge {
+    display: inline-block; font-family: var(--font-mono); font-weight: 600; font-size: 0.95rem;
+    padding: 3px 10px; border-radius: 6px; margin-right: 6px;
+  }
+  .level-badge.at { background: var(--good-soft); color: var(--good); }
+  .level-badge.below { background: var(--warn-soft); color: var(--warn); }
+  .level-badge.above { background: var(--accent-soft); color: var(--accent); }
+
+  .feedback-block { background: var(--paper); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 16px 18px; font-size: 0.96rem; margin-bottom: 24px; }
+
+  .criteria-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+  .criterion-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--paper); }
+  .criterion-card .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .criterion-card .label { font-weight: 600; font-size: 0.92rem; }
+  .criterion-card .val { font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink-soft); flex-shrink: 0; }
+  .criterion-bar-track { height: 6px; border-radius: 999px; background: var(--accent-soft); overflow: hidden; margin-bottom: 8px; }
+  .criterion-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+  .criterion-card .comment { font-size: 0.85rem; color: var(--ink-soft); }
+  @media (max-width: 640px) {
+    .wrap { padding: 32px 16px 60px; }
+    .card { padding: 22px; }
+    .result-head { flex-wrap: wrap; }
+  }
+  @media (max-width: 520px) { .criteria-grid { grid-template-columns: 1fr; } }
+
+  .sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .sw-grid h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; color: var(--ink-soft); }
+  .sw-grid ul { margin: 0; padding-left: 18px; font-size: 0.9rem; }
+  .sw-grid li { margin-bottom: 4px; }
+  @media (max-width: 520px) { .sw-grid { grid-template-columns: 1fr; } }
+
+  .errors-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 0 0 12px; }
+  .grammar-item {
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; background: var(--paper);
+  }
+  .grammar-item .category { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); margin-bottom: 6px; }
+  .grammar-item .diff { font-size: 0.98rem; margin-bottom: 6px; }
+  .grammar-item .orig { color: var(--accent); text-decoration: line-through; text-decoration-color: rgba(138,51,36,0.5); }
+  .grammar-item .arrow { color: var(--ink-faint); margin: 0 6px; }
+  .grammar-item .corr { color: var(--good); font-weight: 600; }
+  .grammar-item .explanation { color: var(--ink-soft); font-size: 0.86rem; }
+  .no-errors { color: var(--good); font-size: 0.95rem; padding: 8px 0; }
+
+  footer { text-align: center; margin-top: 48px; color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.72rem; }
+
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="kicker">A1 &rarr; C1 &middot; DE / EN / FR</span>
+    <h1>My Essay Tutor</h1>
+    <p class="subtitle">Upload a composition as a photo or PDF. It's transcribed, checked for grammar, and scored against the CEFR level you pick.</p>
+  </header>
+
+  <div class="steps">
+    <span class="step-pill" id="step-pill-1">1 &middot; Upload</span>
+    <span class="step-pill" id="step-pill-2">2 &middot; Review text</span>
+    <span class="step-pill" id="step-pill-3">3 &middot; Results</span>
+  </div>
+
+  <!-- STEP 1 -->
+  <section class="card" id="step-1">
+    <h2>Your composition</h2>
+    <p class="hint">JPEG or PDF, up to 10&nbsp;MB. Handwritten or typed.</p>
+
+    <div class="dropzone" id="dropzone">
+      <div class="icon">&#128196;</div>
+      <div class="primary">Click to choose a file, or drag it here</div>
+      <div class="secondary">.jpg, .jpeg, .png, .pdf</div>
+      <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+    </div>
+    <div class="file-chip" id="file-chip">
+      <span id="file-name"></span>
+      <button type="button" id="file-clear">Remove</button>
+    </div>
+
+    <div style="margin-top:26px;">
+      <p class="field-label">Language</p>
+      <div class="pill-row" id="lang-row">
+        <button class="pill-btn" data-lang="de">Deutsch</button>
+        <button class="pill-btn" data-lang="en">English</button>
+        <button class="pill-btn" data-lang="fr">Fran&ccedil;ais</button>
+      </div>
+      <p class="field-label">Target CEFR level</p>
+      <div class="pill-row" id="level-row">
+        <button class="pill-btn" data-level="A1">A1</button>
+        <button class="pill-btn" data-level="A2">A2</button>
+        <button class="pill-btn" data-level="B1">B1</button>
+        <button class="pill-btn" data-level="B2">B2</button>
+        <button class="pill-btn" data-level="C1">C1</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" id="btn-extract" disabled>Transcribe composition</button>
+    </div>
+    <div class="spinner" id="spinner-extract"><span class="dot"></span> Reading the page&hellip; (first request can take ~20s while the model warms up)</div>
+    <div class="error-banner" id="error-1"></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="card" id="step-2" hidden>
+    <h2>Check the transcription</h2>
+    <p class="hint">Handwriting recognition isn't perfect &mdash; fix anything that was misread before grading, so feedback lands on the student's actual words.</p>
+    <textarea id="extracted-text" spellcheck="false"></textarea>
+    <div class="btn-row">
+      <button class="btn" id="btn-grade">Grade this composition</button>
+      <button class="btn btn-ghost" id="btn-back-1">&larr; Start over</button>
+    </div>
+    <div class="spinner" id="spinner-grade"><span class="dot"></span> Grading&hellip;</div>
+    <div class="error-banner" id="error-2"></div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="card" id="step-3" hidden>
+    <div class="result-head">
+      <div class="score-ring" id="score-ring">
+        <div class="num" id="score-num">&mdash;</div>
+        <div class="of100">/ 100</div>
+      </div>
+      <div>
+        <p class="level-line">Target: <strong id="target-level-out">&mdash;</strong></p>
+        <span class="level-badge" id="level-badge">&mdash;</span>
+      </div>
+    </div>
+
+    <div class="feedback-block" id="overall-feedback"></div>
+
+    <p class="errors-title">Criteria (12 pts each, 48 total)</p>
+    <div class="criteria-grid" id="criteria-grid"></div>
+
+    <div class="sw-grid">
+      <div>
+        <h3>Strengths</h3>
+        <ul id="strengths-list"></ul>
+      </div>
+      <div>
+        <h3>Areas to work on</h3>
+        <ul id="weaknesses-list"></ul>
+      </div>
+    </div>
+
+    <p class="errors-title">Grammar &amp; spelling</p>
+    <div id="grammar-list"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btn-restart">Grade another composition</button>
+    </div>
+  </section>
+
+  <footer>my-essay-tutor &middot; vision-LLM extraction, MCP-orchestrated grammar &amp; CEFR grading</footer>
+</div>
+
+<script>
+(function () {
+  const state = { file: null, lang: null, level: null };
+
+  const CRITERIA_LABELS = {
+    de: { vocabulary: 'Wortschatz', coherence: 'Roter Faden', grammar: 'Grammatik', content_relevance: 'Inhalt' },
+    en: { vocabulary: 'Vocabulary', coherence: 'Coherence & Flow', grammar: 'Grammar', content_relevance: 'Content & Topic' },
+    fr: { vocabulary: 'Vocabulaire', coherence: 'Cohérence', grammar: 'Grammaire', content_relevance: 'Contenu' },
+  };
+  const CRITERIA_ORDER = ['vocabulary', 'coherence', 'grammar', 'content_relevance'];
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  const fileChip = document.getElementById('file-chip');
+  const fileName = document.getElementById('file-name');
+  const fileClear = document.getElementById('file-clear');
+  const btnExtract = document.getElementById('btn-extract');
+  const spinnerExtract = document.getElementById('spinner-extract');
+  const error1 = document.getElementById('error-1');
+
+  function updateExtractEnabled() {
+    btnExtract.disabled = !(state.file && state.lang && state.level);
+  }
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  ['dragover', 'dragenter'].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+  dropzone.addEventListener('drop', e => {
+    if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) setFile(fileInput.files[0]);
+  });
+  fileClear.addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.file = null;
+    fileInput.value = '';
+    fileChip.classList.remove('visible');
+    updateExtractEnabled();
+  });
+
+  function setFile(file) {
+    state.file = file;
+    fileName.textContent = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+    fileChip.classList.add('visible');
+    updateExtractEnabled();
+  }
+
+  document.querySelectorAll('#lang-row .pill-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#lang-row .pill-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.lang = btn.dataset.lang;
+      updateExtractEnabled();
+    });
+  });
+  document.querySelectorAll('#level-row .pill-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#level-row .pill-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.level = btn.dataset.level;
+      updateExtractEnabled();
+    });
+  });
+
+  function setStep(n) {
+    document.getElementById('step-1').hidden = n !== 1;
+    document.getElementById('step-2').hidden = n !== 2;
+    document.getElementById('step-3').hidden = n !== 3;
+    [1, 2, 3].forEach(i => {
+      const pill = document.getElementById('step-pill-' + i);
+      pill.classList.toggle('active', i === n);
+      pill.classList.toggle('done', i < n);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function extract() {
+    error1.classList.remove('visible');
+    btnExtract.disabled = true;
+    spinnerExtract.classList.add('visible');
+    try {
+      const form = new FormData();
+      form.append('file', state.file);
+      const res = await fetch('/api/extract', { method: 'POST', body: form });
+      if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+      const data = await res.json();
+      document.getElementById('extracted-text').value = data.extracted_text;
+      setStep(2);
+    } catch (err) {
+      error1.textContent = 'Could not read the file: ' + err.message;
+      error1.classList.add('visible');
+    } finally {
+      spinnerExtract.classList.remove('visible');
+      updateExtractEnabled();
+    }
+  }
+  btnExtract.addEventListener('click', extract);
+
+  document.getElementById('btn-back-1').addEventListener('click', () => setStep(1));
+
+  const btnGrade = document.getElementById('btn-grade');
+  const spinnerGrade = document.getElementById('spinner-grade');
+  const error2 = document.getElementById('error-2');
+
+  async function grade() {
+    const text = document.getElementById('extracted-text').value.trim();
+    if (!text) {
+      error2.textContent = 'The transcription is empty.';
+      error2.classList.add('visible');
+      return;
+    }
+    error2.classList.remove('visible');
+    btnGrade.disabled = true;
+    spinnerGrade.classList.add('visible');
+    try {
+      const res = await fetch('/api/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, language_code: state.lang, target_level: state.level }),
+      });
+      if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+      renderResult(await res.json());
+      setStep(3);
+    } catch (err) {
+      error2.textContent = 'Grading failed: ' + err.message;
+      error2.classList.add('visible');
+    } finally {
+      btnGrade.disabled = false;
+      spinnerGrade.classList.remove('visible');
+    }
+  }
+  btnGrade.addEventListener('click', grade);
+
+  function renderResult(r) {
+    document.getElementById('score-num').textContent = r.score_out_of_100;
+    document.getElementById('target-level-out').textContent = r.target_level;
+
+    const badge = document.getElementById('level-badge');
+    badge.className = 'level-badge ' + r.level_confidence;
+    const labelMap = { below: 'below target', at: 'at target', above: 'above target' };
+    badge.textContent = r.achieved_level + ' · ' + (labelMap[r.level_confidence] || r.level_confidence);
+
+    document.getElementById('overall-feedback').textContent = r.overall_feedback;
+
+    const criteriaGrid = document.getElementById('criteria-grid');
+    criteriaGrid.innerHTML = '';
+    const labels = CRITERIA_LABELS[r.language] || CRITERIA_LABELS.en;
+    CRITERIA_ORDER.forEach(key => {
+      const c = r.criteria[key];
+      const card = document.createElement('div');
+      card.className = 'criterion-card';
+
+      const row = document.createElement('div');
+      row.className = 'row';
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = labels[key];
+      const val = document.createElement('span');
+      val.className = 'val';
+      val.textContent = c.score + ' / 12';
+      row.append(label, val);
+
+      const track = document.createElement('div');
+      track.className = 'criterion-bar-track';
+      const fill = document.createElement('div');
+      fill.className = 'criterion-bar-fill';
+      fill.style.width = Math.max(0, Math.min(100, (c.score / 12) * 100)) + '%';
+      track.appendChild(fill);
+
+      const comment = document.createElement('div');
+      comment.className = 'comment';
+      comment.textContent = c.comment;
+
+      card.append(row, track, comment);
+      criteriaGrid.appendChild(card);
+    });
+
+    const strengths = document.getElementById('strengths-list');
+    strengths.innerHTML = '';
+    (r.strengths || []).forEach(s => {
+      const li = document.createElement('li');
+      li.textContent = s;
+      strengths.appendChild(li);
+    });
+
+    const weaknesses = document.getElementById('weaknesses-list');
+    weaknesses.innerHTML = '';
+    (r.weaknesses || []).forEach(w => {
+      const li = document.createElement('li');
+      li.textContent = w;
+      weaknesses.appendChild(li);
+    });
+
+    const list = document.getElementById('grammar-list');
+    list.innerHTML = '';
+    if (!r.grammar_errors || r.grammar_errors.length === 0) {
+      const p = document.createElement('p');
+      p.className = 'no-errors';
+      p.textContent = 'No grammar or spelling errors found.';
+      list.appendChild(p);
+    } else {
+      r.grammar_errors.forEach(err => {
+        const item = document.createElement('div');
+        item.className = 'grammar-item';
+        const cat = document.createElement('div');
+        cat.className = 'category';
+        cat.textContent = err.category;
+        const diff = document.createElement('div');
+        diff.className = 'diff';
+        const orig = document.createElement('span');
+        orig.className = 'orig';
+        orig.textContent = err.original;
+        const arrow = document.createElement('span');
+        arrow.className = 'arrow';
+        arrow.textContent = '→';
+        const corr = document.createElement('span');
+        corr.className = 'corr';
+        corr.textContent = err.correction;
+        diff.append(orig, arrow, corr);
+        const expl = document.createElement('div');
+        expl.className = 'explanation';
+        expl.textContent = err.explanation;
+        item.append(cat, diff, expl);
+        list.appendChild(item);
+      });
+    }
+  }
+
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    state.file = null; state.lang = null; state.level = null;
+    fileInput.value = '';
+    fileChip.classList.remove('visible');
+    document.querySelectorAll('.pill-btn.selected').forEach(b => b.classList.remove('selected'));
+    document.getElementById('extracted-text').value = '';
+    updateExtractEnabled();
+    setStep(1);
+  });
+})();
+</script>
+</body>
+</html>

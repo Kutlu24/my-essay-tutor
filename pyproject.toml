@@ -36,3 +36,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# The SPA frontend must ship inside the wheel: the API app mounts it at /ui
+# (and germanhub re-mounts the whole app at /essay). Without this, a pip/git
+# install has API routes but no UI.
+[tool.setuptools.package-data]
+"my_essay_tutor.frontend" = ["**/*"]

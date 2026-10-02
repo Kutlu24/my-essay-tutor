@@ -15,7 +15,10 @@ class CriterionScore(BaseModel):
 
 class CriteriaScores(BaseModel):
     """Four-criterion rubric (Wortschatz / roter Faden / Grammatik / Inhalt),
-    12 points each, 48 total -- same rubric used across every CEFR level."""
+    12 points each, 48 total -- scored per target level against the telc
+    "Schreiben" criteria (see grading._TELC_RUBRICS: A1/A2 Leitpunkt-focused,
+    B1/B2 Allgemein's three A-D criteria and C1 Hochschule's four 12/8/4/0
+    criteria all map onto these four buckets)."""
 
     vocabulary: CriterionScore
     coherence: CriterionScore

@@ -50,16 +50,64 @@ B2: Interacts with fluency and spontaneity; produces clear, detailed text. Wide 
 C1: Expresses ideas fluently and flexibly for social, academic and professional purposes; well-structured, complex text with only occasional minor slips.
 """.strip()
 
-_PROMPT_TEMPLATE = """You are an expert {language} language teacher grading a student's written composition against the CEFR framework.
+# telc "Schreiben" / "Schriftlicher Ausdruck" assessment criteria, per exam.
+# Sources: telc exam handbooks, Tipps-fuer-Teilnehmer PDFs and the telc C1
+# Hochschule Bewertungsraster (telc.net). B1/B2 Allgemein grade THREE criteria
+# (Aufgabenbewältigung, Kommunikative Gestaltung, Formale Richtigkeit) in
+# A-D bands; C1 Hochschule grades FOUR criteria with fixed anchors (12/8/4/0);
+# A1/A2 are task-based (form + short message) with the Leitpunkte as the core
+# criterion. Our fixed four-way schema always maps onto these per level.
+_TELC_EXAMS = {
+    "A1": 'telc Deutsch A1 ("Start Deutsch 1")',
+    "A2": 'telc Deutsch A2 ("Start Deutsch 2")',
+    "B1": "telc Deutsch B1 (Allgemein)",
+    "B2": "telc Deutsch B2 (Allgemein)",
+    "C1": "telc Deutsch C1 Hochschule",
+}
 
-The student was asked to write at the {target_level} level. CEFR level descriptors for reference:
+_TELC_RUBRICS = {
+    "A1": """Task type: filling in a form plus a short everyday message (~30 words, three mandatory content points / Leitpunkte). What telc raters weigh at A1:
+- content_relevance (Inhalt): every given Leitpunkt must appear -- one simple sentence per point is sufficient. A missing Leitpunkt is the most serious telc deduction at this level.
+- coherence (Kommunikative Gestaltung): a simple, understandable everyday message in the right text type (note/email); short clear sentences; a minimal greeting/closing where the text type expects one.
+- grammar + vocabulary (Formale Richtigkeit): very basic words and structures only. Frequent basic errors are EXPECTED at A1 and only matter when they block understanding ("Verständlichkeit geht vor").
+telc bands mapped to 0-12: A = all points covered, understandable (10-12); B = all points, some errors (7-9); C = one point missing or many errors (4-6); D = barely understandable or most points missing (0-3).""",
+    "A2": """Task type: a short semi-formal everyday message/letter covering given Leitpunkte. What telc raters weigh at A2:
+- content_relevance (Inhalt): all Leitpunkte treated, content relevant to the given situation; a missing one is the most serious telc deduction at this level.
+- coherence (Kommunikative Gestaltung): a simple connected text with basic connectors (und, aber, dann, weil), appropriate to the everyday situation and its text type/register.
+- grammar + vocabulary (Formale Richtigkeit): elementary structures (present, Perfekt, simple requests); noticeable errors are tolerated at A2 as long as the text stays comprehensible ("Verständlichkeit geht vor").
+telc bands mapped to 0-12: A = all points, clear and largely correct (10-12); B = all points, noticeable errors (7-9); C = one point missing or errors that partly hinder understanding (4-6); D = most points missing or hard to understand (0-3).""",
+    "B1": """Task type: a personal or semi-formal letter/email (~150 words, 30 minutes) covering four given Leitpunkte. Official telc B1 rubric -- three criteria, graded A-D:
+- Aufgabenbewaeltigung -> content_relevance: ALL four Leitpunkte addressed, at least one full sentence each. A single missing Leitpunkt drops the band (A to B or worse).
+- Kommunikative Gestaltung -> coherence: clear letter structure (Anrede, purpose, body, Grußformel), connectors (ausserdem, deshalb, trotzdem), the register the task demands (Sie vs. du) held consistently; avoid starting every sentence with "Ich"/"Wir".
+- Formale Richtigkeit -> grammar + vocabulary: B1-level grammar, syntax, spelling and vocabulary, weighted by "primacy of comprehensibility" -- errors that do not impede understanding cost less than ones that confuse the reader.
+telc bands mapped to 0-12: A = all points, clean structure/register, few errors (10-12); B = solid with some slips (7-9); C = one point missing or frequent errors (4-6); D = several points missing or seriously hindering errors (0-3).""",
+    "B2": """Task type: a formal letter (e.g. request or complaint, ~150+ words) treating the required Leitpunkte in a strictly formal register. Official telc B2 rubric -- three criteria, graded A-D:
+- Aufgabenbewaeltigung -> content_relevance: the required Leitpunkte covered fully and appropriately for the formal situation.
+- Kommunikative Gestaltung -> coherence: formal register (Sie) held even in an emotional complaint; letter conventions (Betreff, Anrede, Schlussformel); logical structure with varied connectors.
+- Formale Richtigkeit -> grammar + vocabulary: differentiated B2 repertoire expected -- complex structures (Passiv, Konjunktiv II, Nominalstil), precise vocabulary; errors are rare and must not impede understanding.
+telc bands mapped to 0-12: A = self-assured, differentiated, near-clean (10-12); B = generally clear and correct with some slips (7-9); C = register/structure problems or frequent errors (4-6); D = task largely missed or comprehension seriously hindered (0-3).""",
+    "C1": """Task type: an academic Erörterung essay (>= 350 words, 70 minutes) taking a position on two given opposing statements. Official telc C1 Hochschule rubric -- four criteria with fixed anchors A=12, B=8, C=4, D=0:
+- Aufgabengerechtheit -> content_relevance: BOTH given statements explicitly acknowledged, a clear well-reasoned personal position taken, arguments developed substantively. Missing a statement or drifting off-topic costs severely.
+- Korrektheit -> grammar: grammar, morphology, syntax, spelling and punctuation. Minor slips in complex structures are acceptable at C1 if readability is untouched; frequent errors in basic structures lower the band.
+- Repertoire -> vocabulary: range beyond everyday language -- academic vocabulary, passive voice, participial constructions; persistent simple/repetitive verbs and structures cap the band.
+- Kommunikative Gestaltung -> coherence: clear paragraphing (4-5 paragraphs), varied connectors, precise cohesive references; formal, objective academic tone, minimal "ich" perspectivity.
+Score anchors (telc C1 HS, per criterion): 12 = A, 8 = B, 4 = C, 0 = D; intermediate values (10-11, 6-7, 2-3) interpolate within a band.""",
+}
+
+_PROMPT_TEMPLATE = """You are an expert {language} language teacher grading a student's written composition against the telc "Schreiben" assessment framework.
+
+The student was asked to write at the {target_level} level -- calibrated for the {telc_exam} exam:
+
+{telc_rubric}
+
+CEFR level descriptors (for judging achieved_level, the writer's ACTUAL level -- not the target):
 {descriptors}
 
-Grade the essay below using this four-criterion rubric, 12 points each (same rubric at every CEFR level, calibrated against the target level {target_level} each time):
-- vocabulary (Wortschatz): range and precision of vocabulary for the target level.
-- coherence (roter Faden): logical flow, paragraphing, connectors -- does the text read as one connected argument/narrative.
-- grammar (Grammatik): grammatical accuracy and range of structures for the target level.
-- content_relevance (Inhalt): how well the content addresses the topic/title and task.
+Grade the essay below. Score these four schema criteria, 12 points each (48 total), applying the telc criteria and band mapping above:
+- vocabulary: telc Wortschatz / Repertoire.
+- coherence: telc Kommunikative Gestaltung (structure, connectors, register, cohesion).
+- grammar: telc Formale Richtigkeit / Korrektheit (grammar, syntax, spelling, punctuation).
+- content_relevance: telc Aufgabenbewaeltigung / Aufgabengerechtheit (Leitpunkte/task fully treated).
 
 Return ONLY a JSON object (no markdown fences, no commentary) matching exactly this schema:
 {{
@@ -88,7 +136,15 @@ Rules:
 
 
 def _build_prompt(language: str, target_level: str) -> str:
-    return _PROMPT_TEMPLATE.format(language=language, target_level=target_level, descriptors=CEFR_DESCRIPTORS)
+    if target_level not in _TELC_RUBRICS:
+        raise ValueError(f"Unsupported target_level: {target_level}")
+    return _PROMPT_TEMPLATE.format(
+        language=language,
+        target_level=target_level,
+        telc_exam=_TELC_EXAMS[target_level],
+        telc_rubric=_TELC_RUBRICS[target_level],
+        descriptors=CEFR_DESCRIPTORS,
+    )
 
 
 def _call_glm(prompt: str, essay_text: str) -> _GradingResponse:

@@ -1,0 +1,15 @@
+.env
+.env.*
+**/.env
+**/.env.*
+.git
+.venv
+venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/*.egg-info
+.pytest_cache
+*.pem
+**/*.pem
+id_rsa*

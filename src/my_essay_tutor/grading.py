@@ -135,6 +135,13 @@ _GENERIC_RUBRIC = """Task type: a free composition at the target CEFR level. The
 - coherence: clear organisation, appropriate connectors, consistent register.
 - grammar + vocabulary: range and control appropriate to the level; errors that block understanding weigh more than slips."""
 
+# Swiss Standard German writes "ss" where Germany writes "ß" (heisse/heiße,
+# Strasse/Straße); both are accepted, so neither may be flagged or "corrected".
+_GERMAN_SPELLING_RULE = (
+    '\n- Both German and Swiss Standard German spelling are correct: never report "ss" written for "ß" '
+    '(e.g. heisse, Strasse, gross) - or "ß" itself - as an error.'
+)
+
 _PROMPT_TEMPLATE = """You are an expert {language} language teacher grading a student's written composition against {framework}.
 
 The student was asked to write at the {target_level} level -- calibrated for the {exam_label} exam:
@@ -165,7 +172,7 @@ Return ONLY a JSON object (no markdown fences, no commentary) matching exactly t
 
 Rules:
 - Quote exact substrings from the essay in "original" so they can be located and highlighted.
-- Find every grammar, spelling and syntax error, however small.
+- Find every grammar, spelling and syntax error, however small.{spelling_rule}
 - Score each criterion realistically against the target level {target_level}: flawless work at that level scores 10-12 on a criterion; systematic weakness scores under 6.
 - "off_topic": "none" unless the text does not address the task: "thematic" = wrong subject, "discursive" = right subject but wrong text type/function, "complete" = both.
 - If the essay text looks garbled or clearly broken by OCR (isolated nonsense characters, no coherent words), say so plainly in overall_feedback instead of inventing errors for text that likely isn't what the student wrote.
@@ -205,6 +212,7 @@ def _build_prompt(language: str, target_level: str, exam: exams.Exam, task: exam
         meaning = _CRITERION_MEANING[exam.scheme]
 
     return _PROMPT_TEMPLATE.format(
+        spelling_rule=_GERMAN_SPELLING_RULE if language == "German" else "",
         language=language,
         framework=framework,
         target_level=target_level,

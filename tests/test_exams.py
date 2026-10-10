@@ -115,3 +115,10 @@ def test_prompt_builds_and_lists_the_schema_criteria(language, exam_id, level, t
     assert '"content_relevance"' in prompt
     assert ('"sociolinguistic"' in prompt) == (exam.scheme == "delf")
     assert ('"objectivity"' in prompt) == (task is not None and t.id == "synthese")
+
+
+def test_german_prompt_accepts_swiss_spelling_but_other_languages_do_not_mention_it():
+    exam, task = exams.resolve("de", "goethe", "B1", "t1")
+    assert "Swiss Standard German" in _build_prompt("German", "B1", exam, task, 80)
+    exam, task = exams.resolve("fr", "delf", "B1", None)
+    assert "Swiss Standard German" not in _build_prompt("French", "B1", exam, task, 160)

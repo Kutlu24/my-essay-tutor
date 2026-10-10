@@ -273,7 +273,8 @@
     </div>
 
     <div class="btn-row">
-      <button class="btn" id="btn-extract" disabled>Transcribe composition</button>
+      <button class="btn" id="btn-extract-grade" disabled>Transcribe &amp; grade</button>
+      <button class="btn btn-ghost" id="btn-extract" disabled>Transcribe only</button>
       <button class="btn" id="btn-write-grade" disabled hidden>Grade this composition</button>
     </div>
     <div class="spinner" id="spinner-extract"><span class="dot"></span> <span id="spinner-extract-text">Reading the page&hellip; (first request can take ~20s while the model warms up)</span></div>
@@ -283,12 +284,15 @@
   <!-- STEP 2 -->
   <section class="card" id="step-2" hidden>
     <h2>Check the transcription</h2>
-    <p class="hint">Handwriting recognition isn't perfect &mdash; fix anything that was misread before grading, so feedback lands on the student's actual words.</p>
+    <p class="hint">Handwriting recognition isn't perfect &mdash; fix anything that was misread. You can copy or download the typed text, or grade it.</p>
     <textarea id="extracted-text" spellcheck="false"></textarea>
     <div class="btn-row">
       <button class="btn" id="btn-grade">Grade this composition</button>
+      <button class="btn btn-ghost" id="btn-copy">Copy text</button>
+      <button class="btn btn-ghost" id="btn-download">Download .txt</button>
       <button class="btn btn-ghost" id="btn-back-1">&larr; Start over</button>
     </div>
+    <p class="hint" id="grade-hint" hidden style="margin-top:14px;">To grade this text, go back and pick a language, exam and level first &mdash; your transcription is kept.</p>
     <div class="spinner" id="spinner-grade"><span class="dot"></span> Grading&hellip;</div>
     <div class="error-banner" id="error-2"></div>
   </section>
@@ -358,7 +362,7 @@
   const $ = id => document.getElementById(id);
   const dropzone = $('dropzone'), fileInput = $('file-input'), fileChip = $('file-chip');
   const fileName = $('file-name'), fileClear = $('file-clear');
-  const btnExtract = $('btn-extract'), btnWriteGrade = $('btn-write-grade');
+  const btnExtract = $('btn-extract'), btnExtractGrade = $('btn-extract-grade'), btnWriteGrade = $('btn-write-grade');
   const spinnerExtract = $('spinner-extract'), spinnerExtractText = $('spinner-extract-text');
   const error1 = $('error-1'), typed = $('typed-text'), wordcount = $('wordcount');
   const SPINNER_UPLOAD = spinnerExtractText.textContent;
@@ -378,7 +382,8 @@
 
   function updateEnabled() {
     const ready = state.lang && state.exam && state.level;
-    btnExtract.disabled = !(ready && state.file);
+    btnExtract.disabled = !state.file;  // transcription alone needs no language/exam/level
+    btnExtractGrade.disabled = !(ready && state.file);
     btnWriteGrade.disabled = !(ready && typed.value.trim());
   }
 
@@ -398,6 +403,7 @@
     $('upload-panel').hidden = mode !== 'upload';
     $('write-panel').hidden = mode !== 'write';
     btnExtract.hidden = mode !== 'upload';
+    btnExtractGrade.hidden = mode !== 'upload';
     btnWriteGrade.hidden = mode !== 'write';
     $('step-pill-2').textContent = mode === 'upload' ? '2 · Review text' : '2 · Grade';
     updateEnabled();
@@ -499,9 +505,10 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  async function extract() {
+  async function extract(autoGrade) {
     error1.classList.remove('visible');
     btnExtract.disabled = true;
+    btnExtractGrade.disabled = true;
     spinnerExtractText.textContent = SPINNER_UPLOAD;
     spinnerExtract.classList.add('visible');
     try {
@@ -511,7 +518,18 @@
       if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
       const data = await res.json();
       $('extracted-text').value = data.extracted_text;
-      setStep(2);
+      if (autoGrade === true && data.extracted_text.trim()) {
+        spinnerExtractText.textContent = 'Grading…';
+        try {
+          renderResult(await postGrade(data.extracted_text.trim()));
+          setStep(3);
+          return;
+        } catch (err) {  // keep the transcription: show it for review with the error
+          error2.textContent = 'Grading failed: ' + err.message;
+          error2.classList.add('visible');
+        }
+      }
+      showReviewStep();
     } catch (err) {
       error1.textContent = 'Could not read the file: ' + err.message;
       error1.classList.add('visible');
@@ -520,9 +538,41 @@
       updateEnabled();
     }
   }
-  btnExtract.addEventListener('click', extract);
+  btnExtract.addEventListener('click', () => extract(false));
+  btnExtractGrade.addEventListener('click', () => extract(true));
 
   $('btn-back-1').addEventListener('click', () => setStep(1));
+
+  function showReviewStep() {
+    const ready = state.lang && state.exam && state.level;
+    $('btn-grade').disabled = !ready;
+    $('grade-hint').hidden = !!ready;
+    setStep(2);
+  }
+
+  $('btn-copy').addEventListener('click', async () => {
+    const btn = $('btn-copy');
+    const text = $('extracted-text').value;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {  // clipboard API unavailable (http, old browser): select for manual copy
+      $('extracted-text').select();
+      document.execCommand && document.execCommand('copy');
+    }
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = 'Copy text'; }, 1500);
+  });
+
+  $('btn-download').addEventListener('click', () => {
+    const blob = new Blob([$('extracted-text').value], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = ((state.file && state.file.name.replace(/\.[^.]+$/, '')) || 'composition') + '-transcription.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
 
   const btnGrade = $('btn-grade'), spinnerGrade = $('spinner-grade'), error2 = $('error-2');
 

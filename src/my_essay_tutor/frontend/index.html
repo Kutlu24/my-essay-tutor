@@ -76,6 +76,9 @@
   }
   .pill-btn:hover { border-color: var(--accent); color: var(--accent); }
   .pill-btn.selected { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .lang-btn { display: inline-flex; align-items: center; gap: 10px; padding: 11px 20px 11px 14px; font-size: 1rem; font-weight: 600; }
+  .lang-btn .flag { width: 34px; height: 23px; border-radius: 3px; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(31,43,77,0.18); }
+  .lang-btn.selected { box-shadow: 0 0 0 3px var(--accent-soft); }
 
   .dropzone {
     border: 2px dashed var(--line); border-radius: 14px; padding: 36px 20px;
@@ -254,9 +257,9 @@
     <div style="margin-top:26px;">
       <p class="field-label">Language</p>
       <div class="pill-row" id="lang-row">
-        <button class="pill-btn" data-lang="de">Deutsch</button>
-        <button class="pill-btn" data-lang="en">English</button>
-        <button class="pill-btn" data-lang="fr">Fran&ccedil;ais</button>
+        <button class="pill-btn lang-btn" data-lang="de"><svg class="flag" viewBox="0 0 5 3" aria-hidden="true"><rect width="5" height="3" fill="#FFCE00"/><rect width="5" height="2" fill="#DD0000"/><rect width="5" height="1" fill="#000"/></svg><span>Deutsch</span></button>
+        <button class="pill-btn lang-btn" data-lang="en"><svg class="flag" viewBox="0 0 60 30" aria-hidden="true"><clipPath id="gb-clip"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#gb-clip)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></svg><span>English</span></button>
+        <button class="pill-btn lang-btn" data-lang="fr"><svg class="flag" viewBox="0 0 3 2" aria-hidden="true"><rect width="3" height="2" fill="#ED2939"/><rect width="2" height="2" fill="#fff"/><rect width="1" height="2" fill="#002395"/></svg><span>Fran&ccedil;ais</span></button>
       </div>
       <div id="exam-group" hidden>
         <p class="field-label">Exam &mdash; graded on its official writing criteria</p>

@@ -235,6 +235,43 @@
     .sw-grid, .criteria-grid { gap: 10px; }
   }
 
+  /* ---- wide screens: two columns and a compact header so a step fits one screen */
+  @media (min-width: 920px) {
+    .wrap { max-width: 1140px; padding-top: 22px; padding-bottom: 36px; }
+    header { margin-bottom: 14px; }
+    .kicker { margin-bottom: 8px; }
+    h1 { font-size: 2.1rem; margin-bottom: 6px; }
+    .subtitle { font-size: 0.95rem; max-width: 760px; }
+    .steps { margin: 14px 0 16px; }
+    .card { padding: 24px 30px; }
+    .card h2 { margin-bottom: 4px; }
+    .s1-grid, .res-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 34px; align-items: start; }
+    .s1-right, .res-right { border-left: 1px solid var(--line); padding-left: 34px; }
+    .dropzone { padding: 30px 16px; }
+    .pill-row { margin-bottom: 14px; }
+    .hint { margin-bottom: 14px; }
+    .btn-row { margin-top: 10px; }
+    .s1-right .btn-row { margin-top: 18px; }
+    textarea#typed-text { min-height: clamp(150px, 30vh, 260px); }
+    textarea#extracted-text { min-height: 46vh; }
+    .feedback-block { margin-bottom: 18px; }
+    .result-head { margin-bottom: 18px; }
+    .criteria-grid { gap: 8px; margin-bottom: 14px; }
+    .criterion-card { padding: 9px 12px; }
+    .criterion-card .row { margin-bottom: 5px; }
+    .criterion-card .comment { font-size: 0.8rem; line-height: 1.4; }
+    .grammar-item { padding: 10px 14px; margin-bottom: 8px; }
+    .exam-score { padding: 14px 16px; margin-bottom: 16px; }
+    .exam-score td { padding: 4px 0; }
+    .errors-title { margin-bottom: 8px; }
+    .sw-grid { margin-bottom: 0; }
+    .footer-fine, footer { margin-top: 20px; }
+  }
+  @media (min-width: 920px) and (max-height: 780px) {
+    .subtitle, .kicker { display: none; }
+    .steps { margin-top: 6px; }
+  }
+
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -254,6 +291,7 @@
 
   <!-- STEP 1 -->
   <section class="card" id="step-1">
+    <div class="s1-grid"><div class="s1-left">
     <h2 data-i18n="h2Compose">Your composition</h2>
     <p class="field-label" data-i18n="howSubmit">How do you want to submit it?</p>
     <div class="pill-row" id="mode-row">
@@ -281,7 +319,8 @@
       <div class="wordcount" id="wordcount">0 words</div>
     </div>
 
-    <div style="margin-top:26px;">
+    </div><div class="s1-right">
+    <div class="s1-settings">
       <p class="field-label" data-i18n="lblLanguage">Language</p>
       <div class="pill-row" id="lang-row">
         <button class="pill-btn lang-btn" data-lang="de"><svg class="flag" viewBox="0 0 5 3" aria-hidden="true"><rect width="5" height="3" fill="#FFCE00"/><rect width="5" height="2" fill="#DD0000"/><rect width="5" height="1" fill="#000"/></svg><span>Deutsch</span></button>
@@ -309,6 +348,7 @@
     </div>
     <div class="spinner" id="spinner-extract"><span class="dot"></span> <span id="spinner-extract-text">Reading the page&hellip; (first request can take ~20s while the model warms up)</span></div>
     <div class="error-banner" id="error-1"></div>
+    </div></div>
   </section>
 
   <!-- STEP 2 -->
@@ -329,6 +369,7 @@
 
   <!-- STEP 3 -->
   <section class="card" id="step-3" hidden>
+    <div class="res-grid"><div class="res-left">
     <div class="result-head">
       <div class="score-ring" id="score-ring">
         <div class="num" id="score-num">&mdash;</div>
@@ -352,9 +393,6 @@
       <p class="fine" id="exam-score-note"></p>
     </div>
 
-    <p class="errors-title" data-i18n="critTitle">Criteria (12 pts each)</p>
-    <div class="criteria-grid" id="criteria-grid"></div>
-
     <div class="sw-grid">
       <div>
         <h3 data-i18n="strengths">Strengths</h3>
@@ -366,8 +404,13 @@
       </div>
     </div>
 
+    </div><div class="res-right">
+    <p class="errors-title" data-i18n="critTitle">Criteria (12 pts each)</p>
+    <div class="criteria-grid" id="criteria-grid"></div>
+
     <p class="errors-title" data-i18n="grammarTitle">Grammar &amp; spelling</p>
     <div id="grammar-list"></div>
+    </div></div>
 
     <div class="btn-row">
       <button class="btn btn-ghost" id="btn-restart" data-i18n="btnRestart">Grade another composition</button>

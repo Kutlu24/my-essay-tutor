@@ -336,7 +336,7 @@ def grade_essay(text: str, language_code: str, target_level: str, exam: str | No
     score_out_of_100 = round(sum(c.score for c in scored) * 100 / (12 * len(scored)))
 
     exam_score = (
-        exams.score_task(exam_obj, target_level, task_obj, criteria, word_count, data.off_topic)
+        exams.score_task(exam_obj, target_level, task_obj, criteria, word_count, data.off_topic, language_code)
         if task_obj is not None else None
     )
 

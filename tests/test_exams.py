@@ -122,3 +122,14 @@ def test_german_prompt_accepts_swiss_spelling_but_other_languages_do_not_mention
     assert "Swiss Standard German" in _build_prompt("German", "B1", exam, task, 80)
     exam, task = exams.resolve("fr", "delf", "B1", None)
     assert "Swiss Standard German" not in _build_prompt("French", "B1", exam, task, 160)
+
+
+def test_exam_notes_follow_the_language():
+    exam, task = exams.resolve("fr", "delf", "B2", None)
+    fr = exams.score_task(exam, "B2", task, _criteria(12), word_count=10, off_topic="none", lang="fr")
+    assert "mots" in fr.adjustments[0] and fr.note.startswith("DELF/DALF : le diplôme")
+    en = exams.score_task(exam, "B2", task, _criteria(12), word_count=10, off_topic="none", lang="en")
+    assert "words is under 50%" in en.adjustments[0]
+    exam, task = exams.resolve("de", "goethe", "B1", "t1")
+    de = exams.score_task(exam, "B1", task, _criteria(12), word_count=80, off_topic="none", lang="de")
+    assert de.note.startswith("Goethe: Für das Modul")

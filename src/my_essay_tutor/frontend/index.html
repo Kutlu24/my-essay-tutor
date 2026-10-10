@@ -34,14 +34,15 @@
     font-family: var(--font-body);
     line-height: 1.55;
   }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 48px 32px 90px; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: clamp(24px, 6vw, 48px) clamp(14px, 4vw, 32px) clamp(48px, 10vw, 90px); }
   header { text-align: center; margin-bottom: 40px; }
   .kicker {
     display: inline-flex; align-items: center; gap: 8px;
     font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--accent);
     background: var(--accent-soft); border: 1px solid rgba(138,51,36,0.18);
-    padding: 5px 12px; border-radius: 999px; margin-bottom: 18px;
+    padding: 5px 12px; border-radius: 12px; margin-bottom: 18px;
+    max-width: 100%; text-align: center; flex-wrap: wrap; justify-content: center; line-height: 1.5;
   }
   h1 {
     font-family: var(--font-display); font-weight: 700;
@@ -50,7 +51,7 @@
   }
   .subtitle { color: var(--ink-soft); font-size: 1.02rem; max-width: 560px; margin: 0 auto; }
 
-  .steps { display: flex; justify-content: center; gap: 6px; margin: 28px 0 36px; font-family: var(--font-mono); font-size: 0.72rem; }
+  .steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 28px 0 36px; font-family: var(--font-mono); font-size: 0.72rem; }
   .step-pill {
     padding: 5px 12px; border-radius: 999px; color: var(--ink-faint);
     background: var(--paper-raised); border: 1px solid var(--line); letter-spacing: 0.04em;
@@ -60,7 +61,7 @@
 
   .card {
     background: var(--paper-raised); border: 1px solid var(--line); border-radius: 16px;
-    padding: 32px; box-shadow: 0 1px 2px rgba(31,43,77,0.04);
+    padding: clamp(18px, 4.5vw, 32px); box-shadow: 0 1px 2px rgba(31,43,77,0.04);
   }
   .card + .card { margin-top: 20px; }
   .card h2 { font-family: var(--font-display); font-size: 1.35rem; margin: 0 0 6px; }
@@ -106,7 +107,7 @@
   .btn:hover { opacity: 0.88; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn-ghost { background: none; color: var(--ink-soft); border: 1px solid var(--line); }
-  .btn-row { display: flex; gap: 10px; margin-top: 22px; align-items: center; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; align-items: center; }
 
   textarea#extracted-text {
     width: 100%; min-height: 220px; font-family: var(--font-body); font-size: 1rem;
@@ -208,6 +209,32 @@
   .exam-score .adj { color: var(--warn); font-size: 0.85rem; margin: 10px 0 0; }
   .exam-score .fine { color: var(--ink-faint); font-size: 0.8rem; margin: 10px 0 0; }
 
+  /* ---- responsive: nothing may force horizontal scrolling */
+  html { -webkit-text-size-adjust: 100%; }
+  img, svg { max-width: 100%; }
+  textarea { max-width: 100%; }
+  .card, .grammar-item, .criterion-card, .feedback-block, .exam-score, .file-chip { overflow-wrap: anywhere; }
+  .file-chip span { min-width: 0; }
+  textarea#typed-text, textarea#extracted-text { min-height: min(260px, 38vh); }
+  .exam-score table { table-layout: fixed; }
+  .exam-score td:first-child { overflow-wrap: anywhere; padding-right: 8px; }
+  .pill-btn { max-width: 100%; text-align: left; }
+  @media (max-width: 640px) {
+    .dropzone { padding: 26px 14px; }
+    .pill-row { gap: 6px; }
+    .btn-row .btn { flex: 1 1 auto; text-align: center; }
+    .exam-score { padding: 14px; }
+    .exam-score td.band { width: 30%; font-size: 0.78rem; }
+    .exam-score td.pts { width: 24%; font-size: 0.82rem; }
+    .score-ring { width: 78px; height: 78px; }
+  }
+  @media (max-width: 420px) {
+    .lang-btn { flex: 1 1 100%; justify-content: flex-start; }
+    .pill-btn { padding: 9px 12px; font-size: 0.9rem; }
+    .step-pill { font-size: 0.66rem; padding: 4px 9px; }
+    .sw-grid, .criteria-grid { gap: 10px; }
+  }
+
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -216,69 +243,69 @@
   <header>
     <span class="kicker">A1 &rarr; C1 &middot; telc &middot; Goethe &middot; DELF/DALF &middot; DE / EN / FR</span>
     <h1>My Essay Tutor</h1>
-    <p class="subtitle">Upload a composition as a photo or PDF, or write it right here. It's checked for grammar and scored against the exam and level you pick.</p>
+    <p class="subtitle" data-i18n="subtitle">Upload a composition as a photo or PDF, or write it right here. It's checked for grammar and scored against the exam and level you pick.</p>
   </header>
 
   <div class="steps">
-    <span class="step-pill" id="step-pill-1">1 &middot; Submit</span>
+    <span class="step-pill" id="step-pill-1" data-i18n="pill1">1 &middot; Submit</span>
     <span class="step-pill" id="step-pill-2">2 &middot; Review text</span>
-    <span class="step-pill" id="step-pill-3">3 &middot; Results</span>
+    <span class="step-pill" id="step-pill-3" data-i18n="pill3">3 &middot; Results</span>
   </div>
 
   <!-- STEP 1 -->
   <section class="card" id="step-1">
-    <h2>Your composition</h2>
-    <p class="field-label">How do you want to submit it?</p>
+    <h2 data-i18n="h2Compose">Your composition</h2>
+    <p class="field-label" data-i18n="howSubmit">How do you want to submit it?</p>
     <div class="pill-row" id="mode-row">
-      <button class="pill-btn selected" data-mode="upload">Upload photo / PDF</button>
-      <button class="pill-btn" data-mode="write">Write it here</button>
+      <button class="pill-btn selected" data-mode="upload" data-i18n="modeUpload">Upload photo / PDF</button>
+      <button class="pill-btn" data-mode="write" data-i18n="modeWrite">Write it here</button>
     </div>
 
     <div id="upload-panel">
-      <p class="hint">JPEG or PDF, up to 10&nbsp;MB. Handwritten or typed.</p>
+      <p class="hint" data-i18n="hintUpload">JPEG or PDF, up to 10&nbsp;MB. Handwritten or typed.</p>
       <div class="dropzone" id="dropzone">
         <div class="icon">&#128196;</div>
-        <div class="primary">Click to choose a file, or drag it here</div>
+        <div class="primary" data-i18n="dzPrimary">Click to choose a file, or drag it here</div>
         <div class="secondary">.jpg, .jpeg, .png, .pdf</div>
         <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
       </div>
       <div class="file-chip" id="file-chip">
         <span id="file-name"></span>
-        <button type="button" id="file-clear">Remove</button>
+        <button type="button" id="file-clear" data-i18n="remove">Remove</button>
       </div>
     </div>
 
     <div id="write-panel" hidden>
-      <p class="hint">Type or paste your text. It is graded exactly as written &mdash; no transcription step.</p>
-      <textarea id="typed-text" spellcheck="false" placeholder="Start writing&hellip;"></textarea>
+      <p class="hint" data-i18n="hintWrite">Type or paste your text. It is graded exactly as written &mdash; no transcription step.</p>
+      <textarea id="typed-text" spellcheck="false" placeholder="Start writing&hellip;" data-i18n-ph="phWrite"></textarea>
       <div class="wordcount" id="wordcount">0 words</div>
     </div>
 
     <div style="margin-top:26px;">
-      <p class="field-label">Language</p>
+      <p class="field-label" data-i18n="lblLanguage">Language</p>
       <div class="pill-row" id="lang-row">
         <button class="pill-btn lang-btn" data-lang="de"><svg class="flag" viewBox="0 0 5 3" aria-hidden="true"><rect width="5" height="3" fill="#FFCE00"/><rect width="5" height="2" fill="#DD0000"/><rect width="5" height="1" fill="#000"/></svg><span>Deutsch</span></button>
         <button class="pill-btn lang-btn" data-lang="en"><svg class="flag" viewBox="0 0 60 30" aria-hidden="true"><clipPath id="gb-clip"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#gb-clip)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></svg><span>English</span></button>
         <button class="pill-btn lang-btn" data-lang="fr"><svg class="flag" viewBox="0 0 3 2" aria-hidden="true"><rect width="3" height="2" fill="#ED2939"/><rect width="2" height="2" fill="#fff"/><rect width="1" height="2" fill="#002395"/></svg><span>Fran&ccedil;ais</span></button>
       </div>
       <div id="exam-group" hidden>
-        <p class="field-label">Exam &mdash; graded on its official writing criteria</p>
+        <p class="field-label" data-i18n="lblExam">Exam</p>
         <div class="pill-row" id="exam-row"></div>
       </div>
       <div id="level-group" hidden>
-        <p class="field-label">Target level</p>
+        <p class="field-label" data-i18n="lblLevel">Target level</p>
         <div class="pill-row" id="level-row"></div>
       </div>
       <div id="task-group" hidden>
-        <p class="field-label">Writing task</p>
+        <p class="field-label" data-i18n="lblTask">Writing task</p>
         <div class="pill-row" id="task-row"></div>
       </div>
     </div>
 
     <div class="btn-row">
-      <button class="btn" id="btn-extract-grade" disabled>Transcribe &amp; grade</button>
-      <button class="btn btn-ghost" id="btn-extract" disabled>Transcribe only</button>
-      <button class="btn" id="btn-write-grade" disabled hidden>Grade this composition</button>
+      <button class="btn" id="btn-extract-grade" data-i18n="btnExtractGrade" disabled>Transcribe &amp; grade</button>
+      <button class="btn btn-ghost" id="btn-extract" data-i18n="btnExtract" disabled>Transcribe only</button>
+      <button class="btn" id="btn-write-grade" data-i18n="btnGrade" disabled hidden>Grade this composition</button>
     </div>
     <div class="spinner" id="spinner-extract"><span class="dot"></span> <span id="spinner-extract-text">Reading the page&hellip; (first request can take ~20s while the model warms up)</span></div>
     <div class="error-banner" id="error-1"></div>
@@ -286,17 +313,17 @@
 
   <!-- STEP 2 -->
   <section class="card" id="step-2" hidden>
-    <h2>Check the transcription</h2>
-    <p class="hint">Handwriting recognition isn't perfect &mdash; fix anything that was misread. You can copy or download the typed text, or grade it.</p>
+    <h2 data-i18n="h2Check">Check the transcription</h2>
+    <p class="hint" data-i18n="hintCheck">Handwriting recognition isn't perfect &mdash; fix anything that was misread. You can copy or download the typed text, or grade it.</p>
     <textarea id="extracted-text" spellcheck="false"></textarea>
     <div class="btn-row">
-      <button class="btn" id="btn-grade">Grade this composition</button>
-      <button class="btn btn-ghost" id="btn-copy">Copy text</button>
-      <button class="btn btn-ghost" id="btn-download">Download .txt</button>
-      <button class="btn btn-ghost" id="btn-back-1">&larr; Start over</button>
+      <button class="btn" id="btn-grade" data-i18n="btnGrade">Grade this composition</button>
+      <button class="btn btn-ghost" id="btn-copy" data-i18n="btnCopy">Copy text</button>
+      <button class="btn btn-ghost" id="btn-download" data-i18n="btnDownload">Download .txt</button>
+      <button class="btn btn-ghost" id="btn-back-1" data-i18n="btnStartOver">&larr; Start over</button>
     </div>
-    <p class="hint" id="grade-hint" hidden style="margin-top:14px;">To grade this text, go back and pick a language, exam and level first &mdash; your transcription is kept.</p>
-    <div class="spinner" id="spinner-grade"><span class="dot"></span> Grading&hellip;</div>
+    <p class="hint" id="grade-hint" data-i18n="gradeHint" hidden style="margin-top:14px;">To grade this text, go back and pick a language, exam and level first &mdash; your transcription is kept.</p>
+    <div class="spinner" id="spinner-grade"><span class="dot"></span> <span data-i18n="spinGrading">Grading&hellip;</span></div>
     <div class="error-banner" id="error-2"></div>
   </section>
 
@@ -308,7 +335,7 @@
         <div class="of100">/ 100</div>
       </div>
       <div>
-        <p class="level-line">Target: <strong id="target-level-out">&mdash;</strong></p>
+        <p class="level-line"><span data-i18n="target">Target:</span> <strong id="target-level-out">&mdash;</strong></p>
         <span class="level-badge" id="level-badge">&mdash;</span>
       </div>
     </div>
@@ -325,34 +352,34 @@
       <p class="fine" id="exam-score-note"></p>
     </div>
 
-    <p class="errors-title">Criteria (12 pts each)</p>
+    <p class="errors-title" data-i18n="critTitle">Criteria (12 pts each)</p>
     <div class="criteria-grid" id="criteria-grid"></div>
 
     <div class="sw-grid">
       <div>
-        <h3>Strengths</h3>
+        <h3 data-i18n="strengths">Strengths</h3>
         <ul id="strengths-list"></ul>
       </div>
       <div>
-        <h3>Areas to work on</h3>
+        <h3 data-i18n="weaknesses">Areas to work on</h3>
         <ul id="weaknesses-list"></ul>
       </div>
     </div>
 
-    <p class="errors-title">Grammar &amp; spelling</p>
+    <p class="errors-title" data-i18n="grammarTitle">Grammar &amp; spelling</p>
     <div id="grammar-list"></div>
 
     <div class="btn-row">
-      <button class="btn btn-ghost" id="btn-restart">Grade another composition</button>
+      <button class="btn btn-ghost" id="btn-restart" data-i18n="btnRestart">Grade another composition</button>
     </div>
   </section>
 
-  <footer>my-essay-tutor &middot; vision-LLM extraction, MCP-orchestrated grammar &amp; CEFR grading</footer>
+  <footer data-i18n="footer">my-essay-tutor</footer>
 </div>
 
 <script>
 (function () {
-  const state = { mode: 'upload', file: null, lang: null, exam: null, level: null, task: null, catalog: null };
+  const state = { ui: 'en', lastResult: null, mode: 'upload', file: null, lang: null, exam: null, level: null, task: null, catalog: null };
 
   const CRITERIA_LABELS = {
     de: { vocabulary: 'Wortschatz', coherence: 'Roter Faden', grammar: 'Grammatik', content_relevance: 'Inhalt', sociolinguistic: 'Register', objectivity: 'Objektivität' },
@@ -363,13 +390,111 @@
   const TELC_SUFFIX = { B1: ' · Allgemein', B2: ' · Allgemein', C1: ' · Hochschule' };
 
   const $ = id => document.getElementById(id);
+
+  // ---- UI strings: the interface follows the essay language picked in step 1.
+  const I18N = {
+    en: {
+      subtitle: "Upload a composition as a photo or PDF, or write it right here. It's checked for grammar and scored against the exam and level you pick.",
+      pill1: '1 · Submit', pill2up: '2 · Review text', pill2write: '2 · Grade', pill3: '3 · Results',
+      h2Compose: 'Your composition', howSubmit: 'How do you want to submit it?',
+      modeUpload: 'Upload photo / PDF', modeWrite: 'Write it here',
+      hintUpload: 'JPEG or PDF, up to 10 MB. Handwritten or typed.',
+      dzPrimary: 'Click to choose a file, or drag it here', remove: 'Remove',
+      hintWrite: 'Type or paste your text. It is graded exactly as written — no transcription step.',
+      phWrite: 'Start writing…',
+      lblLanguage: 'Language', lblExam: 'Exam — graded on its official writing criteria',
+      lblLevel: 'Target level', lblTask: 'Writing task',
+      btnExtractGrade: 'Transcribe & grade', btnExtract: 'Transcribe only', btnGrade: 'Grade this composition',
+      h2Check: 'Check the transcription',
+      hintCheck: "Handwriting recognition isn't perfect — fix anything that was misread. You can copy or download the typed text, or grade it.",
+      btnCopy: 'Copy text', copied: 'Copied', btnDownload: 'Download .txt', btnStartOver: '← Start over',
+      gradeHint: 'To grade this text, go back and pick a language, exam and level first — your transcription is kept.',
+      spinReading: 'Reading the page… (first request can take ~20s while the model warms up)',
+      spinGrading: 'Grading…',
+      target: 'Target:', below: 'below target', at: 'at target', above: 'above target',
+      critTitle: 'Criteria (12 pts each)', strengths: 'Strengths', weaknesses: 'Areas to work on',
+      grammarTitle: 'Grammar & spelling', noErrors: 'No grammar or spelling errors found.',
+      btnRestart: 'Grade another composition',
+      estimate: "Estimate from the official criteria, not an examiner's mark.",
+      word: 'word', words: 'words', expected: 'expected',
+      examCefr: 'General CEFR (A1–C1)',
+      errExams: 'Could not load the exam list — please reload the page.',
+      errRead: 'Could not read the file: ', errGrade: 'Grading failed: ', errEmpty: 'The transcription is empty.',
+      footer: 'my-essay-tutor · vision-LLM extraction, MCP-orchestrated grammar & CEFR grading',
+      pageTitle: 'My Essay Tutor',
+    },
+    de: {
+      subtitle: 'Laden Sie einen Aufsatz als Foto oder PDF hoch oder schreiben Sie ihn direkt hier. Er wird auf Grammatik geprüft und nach der gewählten Prüfung und Stufe bewertet.',
+      pill1: '1 · Einreichen', pill2up: '2 · Text prüfen', pill2write: '2 · Bewerten', pill3: '3 · Ergebnis',
+      h2Compose: 'Ihr Text', howSubmit: 'Wie möchten Sie den Text einreichen?',
+      modeUpload: 'Foto / PDF hochladen', modeWrite: 'Hier schreiben',
+      hintUpload: 'JPEG oder PDF, bis 10 MB. Handschriftlich oder getippt.',
+      dzPrimary: 'Zum Auswählen klicken oder Datei hierher ziehen', remove: 'Entfernen',
+      hintWrite: 'Text eintippen oder einfügen. Er wird genau so bewertet, wie er geschrieben ist – ohne Transkriptionsschritt.',
+      phWrite: 'Schreiben Sie los …',
+      lblLanguage: 'Sprache', lblExam: 'Prüfung – bewertet nach den offiziellen Schreibkriterien',
+      lblLevel: 'Zielniveau', lblTask: 'Schreibaufgabe',
+      btnExtractGrade: 'Abtippen & bewerten', btnExtract: 'Nur abtippen', btnGrade: 'Text bewerten',
+      h2Check: 'Transkription prüfen',
+      hintCheck: 'Handschrifterkennung ist nicht perfekt – korrigieren Sie Falsch-Gelesenes. Sie können den getippten Text kopieren, herunterladen oder bewerten lassen.',
+      btnCopy: 'Text kopieren', copied: 'Kopiert', btnDownload: '.txt herunterladen', btnStartOver: '← Neu beginnen',
+      gradeHint: 'Zum Bewerten gehen Sie zurück und wählen zuerst Sprache, Prüfung und Niveau – Ihre Transkription bleibt erhalten.',
+      spinReading: 'Seite wird gelesen … (die erste Anfrage kann ca. 20 s dauern, bis das Modell bereit ist)',
+      spinGrading: 'Wird bewertet …',
+      target: 'Ziel:', below: 'unter dem Ziel', at: 'auf Zielniveau', above: 'über dem Ziel',
+      critTitle: 'Kriterien (je 12 Punkte)', strengths: 'Stärken', weaknesses: 'Woran Sie arbeiten können',
+      grammarTitle: 'Grammatik & Rechtschreibung', noErrors: 'Keine Grammatik- oder Rechtschreibfehler gefunden.',
+      btnRestart: 'Weiteren Text bewerten',
+      estimate: 'Schätzung nach den offiziellen Kriterien, keine Note einer Prüferin oder eines Prüfers.',
+      word: 'Wort', words: 'Wörter', expected: 'erwartet',
+      examCefr: 'Allgemeiner GER (A1–C1)',
+      errExams: 'Prüfungsliste konnte nicht geladen werden – bitte Seite neu laden.',
+      errRead: 'Datei konnte nicht gelesen werden: ', errGrade: 'Bewertung fehlgeschlagen: ', errEmpty: 'Die Transkription ist leer.',
+      footer: 'my-essay-tutor · Texterkennung per Vision-LLM, Grammatik- & GER-Bewertung per MCP',
+      pageTitle: 'My Essay Tutor – Aufsatz-Coach',
+    },
+    fr: {
+      subtitle: "Déposez une rédaction en photo ou en PDF, ou écrivez-la directement ici. Elle est vérifiée sur le plan grammatical et notée selon l'examen et le niveau choisis.",
+      pill1: '1 · Envoi', pill2up: '2 · Vérifier le texte', pill2write: '2 · Évaluer', pill3: '3 · Résultats',
+      h2Compose: 'Votre rédaction', howSubmit: 'Comment voulez-vous la soumettre ?',
+      modeUpload: 'Importer photo / PDF', modeWrite: 'Écrire ici',
+      hintUpload: 'JPEG ou PDF, jusqu’à 10 Mo. Manuscrit ou tapé.',
+      dzPrimary: 'Cliquez pour choisir un fichier, ou glissez-le ici', remove: 'Retirer',
+      hintWrite: 'Saisissez ou collez votre texte. Il est évalué tel quel, sans étape de transcription.',
+      phWrite: 'Commencez à écrire…',
+      lblLanguage: 'Langue', lblExam: 'Examen – évalué selon ses critères officiels de production écrite',
+      lblLevel: 'Niveau visé', lblTask: "Tâche d'écriture",
+      btnExtractGrade: 'Transcrire et évaluer', btnExtract: 'Transcrire seulement', btnGrade: 'Évaluer ce texte',
+      h2Check: 'Vérifier la transcription',
+      hintCheck: "La reconnaissance d'écriture n'est pas parfaite – corrigez ce qui a été mal lu. Vous pouvez copier ou télécharger le texte tapé, ou l'évaluer.",
+      btnCopy: 'Copier le texte', copied: 'Copié', btnDownload: 'Télécharger .txt', btnStartOver: '← Recommencer',
+      gradeHint: "Pour évaluer ce texte, revenez en arrière et choisissez d'abord la langue, l'examen et le niveau – votre transcription est conservée.",
+      spinReading: 'Lecture de la page… (la première requête peut prendre ~20 s, le temps que le modèle démarre)',
+      spinGrading: 'Évaluation en cours…',
+      target: 'Objectif :', below: 'sous le niveau visé', at: 'au niveau visé', above: 'au-dessus du niveau visé',
+      critTitle: 'Critères (12 points chacun)', strengths: 'Points forts', weaknesses: 'Points à travailler',
+      grammarTitle: 'Grammaire et orthographe', noErrors: "Aucune erreur de grammaire ou d'orthographe trouvée.",
+      btnRestart: 'Évaluer une autre rédaction',
+      estimate: "Estimation d'après les critères officiels, pas la note d'un examinateur.",
+      word: 'mot', words: 'mots', expected: 'attendu',
+      examCefr: 'CECRL général (A1–C1)',
+      errExams: "Impossible de charger la liste des examens – rechargez la page.",
+      errRead: 'Impossible de lire le fichier : ', errGrade: "Échec de l'évaluation : ", errEmpty: 'La transcription est vide.',
+      footer: 'my-essay-tutor · extraction par LLM de vision, évaluation grammaticale et CECRL via MCP',
+      pageTitle: 'My Essay Tutor – Coach de rédaction',
+    },
+  };
+  function browserUi() {
+    const l = (navigator.language || 'en').slice(0, 2).toLowerCase();
+    return I18N[l] ? l : 'en';
+  }
+  function tr(key) { return (I18N[state.ui] && I18N[state.ui][key]) || I18N.en[key] || key; }
   const dropzone = $('dropzone'), fileInput = $('file-input'), fileChip = $('file-chip');
   const fileName = $('file-name'), fileClear = $('file-clear');
   const btnExtract = $('btn-extract'), btnExtractGrade = $('btn-extract-grade'), btnWriteGrade = $('btn-write-grade');
   const spinnerExtract = $('spinner-extract'), spinnerExtractText = $('spinner-extract-text');
   const error1 = $('error-1'), typed = $('typed-text'), wordcount = $('wordcount');
-  const SPINNER_UPLOAD = spinnerExtractText.textContent;
-
+  
   function currentExam() {
     if (!state.catalog || !state.lang) return null;
     return (state.catalog[state.lang] || []).find(e => e.id === state.exam) || null;
@@ -393,12 +518,26 @@
   function updateWordcount() {
     const n = (typed.value.trim().match(/\S+/g) || []).length;
     const task = currentTask();
-    wordcount.textContent = n + (n === 1 ? ' word' : ' words') +
-      (task && task.expected_words ? ' · expected ' + task.expected_words : '');
+    wordcount.textContent = n + ' ' + (n === 1 ? tr('word') : tr('words')) +
+      (task && task.expected_words ? ' · ' + tr('expected') + ' ' + task.expected_words : '');
     wordcount.classList.remove('short');
     updateEnabled();
   }
   typed.addEventListener('input', updateWordcount);
+
+  function renderPill2() {
+    $('step-pill-2').textContent = tr(state.mode === 'upload' ? 'pill2up' : 'pill2write');
+  }
+
+  function applyUi() {
+    document.documentElement.lang = state.ui;
+    document.title = tr('pageTitle');
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = tr(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = tr(el.dataset.i18nPh); });
+    renderPill2();
+    renderPickers();
+    if (state.lastResult && !$('step-3').hidden) renderResult(state.lastResult);
+  }
 
   function setMode(mode) {
     state.mode = mode;
@@ -408,7 +547,7 @@
     btnExtract.hidden = mode !== 'upload';
     btnExtractGrade.hidden = mode !== 'upload';
     btnWriteGrade.hidden = mode !== 'write';
-    $('step-pill-2').textContent = mode === 'upload' ? '2 · Review text' : '2 · Grade';
+    renderPill2();
     updateEnabled();
   }
   document.querySelectorAll('#mode-row .pill-btn').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
@@ -454,7 +593,7 @@
   function renderPickers() {
     const exams = state.lang && state.catalog ? state.catalog[state.lang] || [] : [];
     $('exam-group').hidden = exams.length === 0;
-    fillRow('exam-row', exams.map(e => ({ value: e.id, label: e.label })), state.exam, id => {
+    fillRow('exam-row', exams.map(e => ({ value: e.id, label: e.id === 'cefr' ? tr('examCefr') : e.label })), state.exam, id => {
       state.exam = id; state.level = null; state.task = null; renderPickers();
     });
 
@@ -473,7 +612,7 @@
     const lvl = currentLevel();
     const tasks = lvl ? lvl.tasks : [];
     $('task-group').hidden = tasks.length < 2;
-    fillRow('task-row', tasks.map(t => ({ value: t.id, label: t.label + (t.expected_words ? ' (' + t.expected_words + ' words)' : '') })),
+    fillRow('task-row', tasks.map(t => ({ value: t.id, label: t.label + (t.expected_words ? ' (' + t.expected_words + ' ' + tr('words') + ')' : '') })),
       state.task, id => { state.task = id; renderPickers(); });
     updateWordcount();
   }
@@ -483,16 +622,17 @@
       document.querySelectorAll('#lang-row .pill-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       state.lang = btn.dataset.lang;
+      state.ui = state.lang;
       state.exam = null; state.level = null; state.task = null;
       const exams = state.catalog ? state.catalog[state.lang] || [] : [];
       if (exams.length) state.exam = exams[0].id;  // first listed exam is the language's default
-      renderPickers();
+      applyUi();
     });
   });
 
   fetch('/api/exams').then(r => r.json()).then(c => { state.catalog = c; renderPickers(); })
     .catch(() => {
-      error1.textContent = 'Could not load the exam list — please reload the page.';
+      error1.textContent = tr('errExams');
       error1.classList.add('visible');
     });
 
@@ -512,7 +652,7 @@
     error1.classList.remove('visible');
     btnExtract.disabled = true;
     btnExtractGrade.disabled = true;
-    spinnerExtractText.textContent = SPINNER_UPLOAD;
+    spinnerExtractText.textContent = tr('spinReading');
     spinnerExtract.classList.add('visible');
     try {
       const form = new FormData();
@@ -522,19 +662,19 @@
       const data = await res.json();
       $('extracted-text').value = data.extracted_text;
       if (autoGrade === true && data.extracted_text.trim()) {
-        spinnerExtractText.textContent = 'Grading…';
+        spinnerExtractText.textContent = tr('spinGrading');
         try {
           renderResult(await postGrade(data.extracted_text.trim()));
           setStep(3);
           return;
         } catch (err) {  // keep the transcription: show it for review with the error
-          error2.textContent = 'Grading failed: ' + err.message;
+          error2.textContent = tr('errGrade') + err.message;
           error2.classList.add('visible');
         }
       }
       showReviewStep();
     } catch (err) {
-      error1.textContent = 'Could not read the file: ' + err.message;
+      error1.textContent = tr('errRead') + err.message;
       error1.classList.add('visible');
     } finally {
       spinnerExtract.classList.remove('visible');
@@ -562,8 +702,8 @@
       $('extracted-text').select();
       document.execCommand && document.execCommand('copy');
     }
-    btn.textContent = 'Copied';
-    setTimeout(() => { btn.textContent = 'Copy text'; }, 1500);
+    btn.textContent = tr('copied');
+    setTimeout(() => { btn.textContent = tr('btnCopy'); }, 1500);
   });
 
   $('btn-download').addEventListener('click', () => {
@@ -599,7 +739,7 @@
   async function gradeReviewed() {
     const text = $('extracted-text').value.trim();
     if (!text) {
-      error2.textContent = 'The transcription is empty.';
+      error2.textContent = tr('errEmpty');
       error2.classList.add('visible');
       return;
     }
@@ -610,7 +750,7 @@
       renderResult(await postGrade(text));
       setStep(3);
     } catch (err) {
-      error2.textContent = 'Grading failed: ' + err.message;
+      error2.textContent = tr('errGrade') + err.message;
       error2.classList.add('visible');
     } finally {
       btnGrade.disabled = false;
@@ -624,13 +764,13 @@
     if (!text) return;
     error1.classList.remove('visible');
     btnWriteGrade.disabled = true;
-    spinnerExtractText.textContent = 'Grading…';
+    spinnerExtractText.textContent = tr('spinGrading');
     spinnerExtract.classList.add('visible');
     try {
       renderResult(await postGrade(text));
       setStep(3);
     } catch (err) {
-      error1.textContent = 'Grading failed: ' + err.message;
+      error1.textContent = tr('errGrade') + err.message;
       error1.classList.add('visible');
     } finally {
       spinnerExtract.classList.remove('visible');
@@ -659,17 +799,18 @@
     const adj = $('exam-score-adj');
     adj.hidden = !es.adjustments.length;
     adj.textContent = es.adjustments.join(' ');
-    $('exam-score-note').textContent = 'Estimate from the official criteria, not an examiner\'s mark. ' + (es.note || '');
+    $('exam-score-note').textContent = tr('estimate') + ' ' + (es.note || '');
   }
 
   function renderResult(r) {
+    state.lastResult = r;
     $('score-num').textContent = r.score_out_of_100;
     const taskLabel = r.exam_score ? r.exam_score.exam + ' ' + r.target_level + ' · ' + r.exam_score.task : r.target_level;
     $('target-level-out').textContent = taskLabel;
 
     const badge = $('level-badge');
     badge.className = 'level-badge ' + r.level_confidence;
-    const labelMap = { below: 'below target', at: 'at target', above: 'above target' };
+    const labelMap = { below: tr('below'), at: tr('at'), above: tr('above') };
     badge.textContent = r.achieved_level + ' · ' + (labelMap[r.level_confidence] || r.level_confidence);
 
     $('overall-feedback').textContent = r.overall_feedback;
@@ -677,7 +818,7 @@
 
     const criteriaGrid = $('criteria-grid');
     criteriaGrid.innerHTML = '';
-    const labels = CRITERIA_LABELS[r.language] || CRITERIA_LABELS.en;
+    const labels = CRITERIA_LABELS[state.ui] || CRITERIA_LABELS.en;
     CRITERIA_ORDER.forEach(key => {
       const c = r.criteria[key];
       if (!c) return;
@@ -726,7 +867,7 @@
     if (!r.grammar_errors || r.grammar_errors.length === 0) {
       const p = document.createElement('p');
       p.className = 'no-errors';
-      p.textContent = 'No grammar or spelling errors found.';
+      p.textContent = tr('noErrors');
       list.appendChild(p);
     } else {
       r.grammar_errors.forEach(err => {
@@ -757,6 +898,7 @@
   }
 
   $('btn-restart').addEventListener('click', () => {
+    state.lastResult = null;
     state.file = null; state.lang = null; state.exam = null; state.level = null; state.task = null;
     fileInput.value = '';
     fileChip.classList.remove('visible');
@@ -767,6 +909,9 @@
     setMode('upload');
     setStep(1);
   });
+
+  state.ui = browserUi();
+  applyUi();
 })();
 </script>
 </body>

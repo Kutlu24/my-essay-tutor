@@ -51,7 +51,7 @@ class Task:
     criteria: tuple[CriterionSpec, ...]
     brief: str  # what the candidate was asked to write (for the prompt)
     rubric: str  # official criteria/descriptors summary (for the prompt)
-    note: str = ""  # shown with the result (pass line, what's not assessed)
+    note: str = ""  # key into _MSG: shown with the result (pass line, what's not assessed)
 
 
 @dataclass(frozen=True)
@@ -73,10 +73,8 @@ _DELF_COMMON = """Official FEI grid (France Education international), criteria g
 - Morphosyntaxe -> grammar: control of morphology, syntax, agreement, spelling at the level.
 Anomalies (apply them): off-topic content (thematic and/or discursive) caps the task-achievement, coherence and lexique criteria; a production under 50% of the expected length scores 0."""
 
-_DELF_NOTE = (
-    "DELF/DALF: a diploma needs 50/100 over all four skills and at least 5/25 in each skill - "
-    "a single written production cannot decide it."
-)
+# Task.note holds a key into _MSG (localized when the result is built).
+_DELF_NOTE = "delf"
 
 
 def _delf_criteria(pts: tuple[float, ...]) -> tuple[CriterionSpec, ...]:
@@ -116,10 +114,7 @@ _DALF_SYNTHESE = Task(
 - Lexique -> vocabulary: wide, precise, reformulated vocabulary; avoid copying the documents' wording.
 - Morphosyntaxe -> grammar: complex structures controlled; only occasional slips.
 Anomalies: off-topic caps task/lexique/coherence; copying whole passages of the documents is penalised; 300 words or more means the task cannot be rated C1 or C1+; under 100 words scores 0.""",
-    note=(
-        "Maximum shown is 12/12.5: the grid's length-compliance criterion (0.5) is not assessed. "
-        + _DELF_NOTE
-    ),
+    note="dalf_synthese",
 )
 
 _DALF_ESSAI = Task(
@@ -171,9 +166,7 @@ _GOETHE_A2_RUBRIC = """Official Goethe-Zertifikat A2 "Bewertungskriterien Schrei
 - Sprache -> coherence + vocabulary + grammar together: Spektrum (angemessen und differenziert -> kaum angemessen) and Beherrschung (vereinzelte Fehlgriffe beeintraechtigen das Verstaendnis nicht -> erheblich).
 An E on Aufgabenerfuellung makes the whole task worth 0 points."""
 
-_GOETHE_NOTE = (
-    "Goethe: the module needs 60/100 over all Schreiben tasks; the points shown are for this one task only."
-)
+_GOETHE_NOTE = "goethe"
 
 _G_BANDS_FULL = (1.0, 0.75, 0.5, 0.25, 0.0)
 
@@ -312,6 +305,33 @@ def catalog() -> dict:
 
 _GOETHE_LETTERS = ("A", "B", "C", "D", "E")
 
+_MSG = {
+    "en": {
+        "delf": "DELF/DALF: a diploma needs 50/100 over all four skills and at least 5/25 in each skill - a single written production cannot decide it.",
+        "dalf_synthese": "Maximum shown is 12/12.5: the grid's length-compliance criterion (0.5) is not assessed. DELF/DALF: a diploma needs 50/100 over all four skills and at least 5/25 in each skill.",
+        "goethe": "Goethe: the module needs 60/100 over all Schreiben tasks; the points shown are for this one task only.",
+        "zero_words": "{n} words is under 50% of the expected length ({exp}): the task scores 0.",
+        "off_topic": "Off-topic ({kind}) caps the affected criteria, as in the official grid.",
+        "goethe_e": "Aufgabenerfüllung is E: the whole task scores 0 points (official rule).",
+    },
+    "de": {
+        "delf": "DELF/DALF: Für das Diplom braucht es 50/100 über alle vier Fertigkeiten und mindestens 5/25 pro Fertigkeit – ein einzelner Schreibtext kann das nicht entscheiden.",
+        "dalf_synthese": "Angezeigtes Maximum: 12/12,5 – das Kriterium zur Längenvorgabe (0,5) wird nicht bewertet. DELF/DALF: Für das Diplom braucht es 50/100 über alle vier Fertigkeiten und mindestens 5/25 pro Fertigkeit.",
+        "goethe": "Goethe: Für das Modul braucht es 60/100 über alle Schreiben-Aufgaben; die angezeigten Punkte gelten nur für diese eine Aufgabe.",
+        "zero_words": "{n} Wörter sind weniger als 50 % der erwarteten Länge ({exp}): Die Aufgabe erhält 0 Punkte.",
+        "off_topic": "Themaverfehlung ({kind}) begrenzt die betroffenen Kriterien, wie im offiziellen Raster.",
+        "goethe_e": "Aufgabenerfüllung ist E: Die ganze Aufgabe erhält 0 Punkte (offizielle Regel).",
+    },
+    "fr": {
+        "delf": "DELF/DALF : le diplôme exige 50/100 sur les quatre compétences et au moins 5/25 dans chacune – une seule production écrite ne peut pas le décider.",
+        "dalf_synthese": "Maximum affiché : 12/12,5 – le critère de respect de la consigne de longueur (0,5) n'est pas évalué. DELF/DALF : le diplôme exige 50/100 sur les quatre compétences et au moins 5/25 dans chacune.",
+        "goethe": "Goethe : le module exige 60/100 sur toutes les tâches de Schreiben ; les points affichés ne concernent que cette tâche.",
+        "zero_words": "{n} mots, c'est moins de 50 % de la longueur attendue ({exp}) : la tâche vaut 0.",
+        "off_topic": "Un hors-sujet ({kind}) plafonne les critères concernés, comme dans la grille officielle.",
+        "goethe_e": "Aufgabenerfüllung est E : toute la tâche vaut 0 point (règle officielle).",
+    },
+}
+
 
 def _band_index(score: int, n_bands: int) -> int:
     """0 = best band. Thresholds on the 0-12 LLM scale are this project's choice."""
@@ -335,28 +355,29 @@ _OFF_TOPIC_MIN_BAND = {
 
 
 def score_task(exam: Exam, level: str, task: Task, criteria: CriteriaScores, word_count: int,
-               off_topic: str) -> ExamScore:
+               off_topic: str, lang: str = "en") -> ExamScore:
     n_bands = len(task.criteria[0].points)
     labels = _GOETHE_LETTERS if exam.scheme == "goethe" else _delf_labels(level)
     max_total = sum(c.points[0] for c in task.criteria)
     notes: list[str] = []
+    msg = _MSG.get(lang, _MSG["en"])
 
     def result(rows: list[ExamCriterionResult], reason: str | None = None) -> ExamScore:
         total = sum(r.points for r in rows)
         return ExamScore(
             exam=exam.label, level=level, task=task.label, criteria=rows,
             total=total, max_total=max_total, percent=round(100 * total / max_total) if max_total else 0,
-            adjustments=([reason] if reason else []) + notes, note=task.note,
+            adjustments=([reason] if reason else []) + notes, note=msg.get(task.note, ""),
         )
 
     if word_count < task.zero_below:
         rows = [ExamCriterionResult(label=c.label, band=labels[-1], points=0.0, max_points=c.points[0])
                 for c in task.criteria]
-        return result(rows, f"{word_count} words is under 50% of the expected length ({task.expected_words}): the task scores 0.")
+        return result(rows, msg["zero_words"].format(n=word_count, exp=task.expected_words))
 
     caps = _OFF_TOPIC_MIN_BAND.get(off_topic, {}) if exam.scheme == "delf" else {}
     if exam.scheme == "delf" and off_topic != "none":
-        notes.append(f"Off-topic ({off_topic}) caps the affected criteria, as in the official grid.")
+        notes.append(msg["off_topic"].format(kind=off_topic))
     rows = []
     for spec in task.criteria:
         raw = round(sum(getattr(criteria, k).score for k in spec.keys) / len(spec.keys))
@@ -368,5 +389,5 @@ def score_task(exam: Exam, level: str, task: Task, criteria: CriteriaScores, wor
     if exam.scheme == "goethe":
         if rows[0].band == "E" or off_topic == "complete":
             rows = [r.model_copy(update={"points": 0.0, "band": "E"}) for r in rows]
-            return result(rows, "Aufgabenerfüllung is E: the whole task scores 0 points (official rule).")
+            return result(rows, msg["goethe_e"])
     return result(rows)

@@ -24,6 +24,34 @@ class CriteriaScores(BaseModel):
     coherence: CriterionScore
     grammar: CriterionScore
     content_relevance: CriterionScore
+    # Only scored for exams whose official grid has them: DELF/DALF's
+    # "adequation sociolinguistique" and the DALF synthese's "regle
+    # d'objectivite" (see exams.py).
+    sociolinguistic: CriterionScore | None = None
+    objectivity: CriterionScore | None = None
+
+
+class ExamCriterionResult(BaseModel):
+    label: str  # the exam body's own criterion name
+    band: str  # "A".."E" (Goethe) or e.g. "B2+" / "B2" / "< B2" / "insuffisant" (DELF/DALF)
+    points: float
+    max_points: float
+
+
+class ExamScore(BaseModel):
+    """Exam-native result for one writing task, derived deterministically
+    from the LLM's 0-12 criterion scores (see exams.score_task) - an
+    estimate, not an examiner's mark."""
+
+    exam: str
+    level: str
+    task: str
+    criteria: list[ExamCriterionResult]
+    total: float
+    max_total: float
+    percent: int
+    adjustments: list[str] = []  # official rules that changed the score (zero rule, off-topic caps)
+    note: str = ""
 
 
 class GradingResult(BaseModel):
@@ -38,6 +66,10 @@ class GradingResult(BaseModel):
     strengths: list[str]
     weaknesses: list[str]
     overall_feedback: str
+    word_count: int = 0
+    exam: str | None = None  # exam id used for grading (see exams.py)
+    task: str | None = None
+    exam_score: ExamScore | None = None  # None for the generic telc/CEFR paths
     # LanguageTool's independent rule-based match list, or None if
     # Settings.enable_grammar_crosscheck is off (the default) - see
     # grammar_check.py. Not reconciled against grammar_errors above; the

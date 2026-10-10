@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Essay Tutor</title>
-<meta name="description" content="Upload a handwritten or typed composition, pick a language and CEFR level, and get grammar feedback with a level score.">
+<meta name="description" content="Upload or write a composition in German, English or French, pick an exam (telc, Goethe, DELF/DALF) and level, and get grammar feedback with an exam-style score.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -184,19 +184,40 @@
 
   footer { text-align: center; margin-top: 48px; color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.72rem; }
 
+  textarea#typed-text {
+    width: 100%; min-height: 260px; font-family: var(--font-body); font-size: 1rem;
+    color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+    resize: vertical; background: var(--paper);
+  }
+  textarea#typed-text:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .wordcount { font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-faint); margin-top: 6px; }
+  .wordcount.short { color: var(--warn); }
+  .mode-note { font-size: 0.8rem; color: var(--ink-faint); margin: -14px 0 22px; }
+
+  .exam-score { border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 28px; background: var(--paper); }
+  .exam-score .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .exam-score .title { font-weight: 600; }
+  .exam-score .total { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; }
+  .exam-score table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .exam-score td { padding: 6px 0; border-top: 1px solid var(--line); }
+  .exam-score td.band { font-family: var(--font-mono); color: var(--ink-soft); text-align: center; width: 28%; }
+  .exam-score td.pts { font-family: var(--font-mono); text-align: right; width: 22%; }
+  .exam-score .adj { color: var(--warn); font-size: 0.85rem; margin: 10px 0 0; }
+  .exam-score .fine { color: var(--ink-faint); font-size: 0.8rem; margin: 10px 0 0; }
+
   [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <span class="kicker">A1 &rarr; C1 &middot; DE / EN / FR</span>
+    <span class="kicker">A1 &rarr; C1 &middot; telc &middot; Goethe &middot; DELF/DALF &middot; DE / EN / FR</span>
     <h1>My Essay Tutor</h1>
-    <p class="subtitle">Upload a composition as a photo or PDF. It's transcribed, checked for grammar, and scored against the CEFR level you pick.</p>
+    <p class="subtitle">Upload a composition as a photo or PDF, or write it right here. It's checked for grammar and scored against the exam and level you pick.</p>
   </header>
 
   <div class="steps">
-    <span class="step-pill" id="step-pill-1">1 &middot; Upload</span>
+    <span class="step-pill" id="step-pill-1">1 &middot; Submit</span>
     <span class="step-pill" id="step-pill-2">2 &middot; Review text</span>
     <span class="step-pill" id="step-pill-3">3 &middot; Results</span>
   </div>
@@ -204,17 +225,30 @@
   <!-- STEP 1 -->
   <section class="card" id="step-1">
     <h2>Your composition</h2>
-    <p class="hint">JPEG or PDF, up to 10&nbsp;MB. Handwritten or typed.</p>
-
-    <div class="dropzone" id="dropzone">
-      <div class="icon">&#128196;</div>
-      <div class="primary">Click to choose a file, or drag it here</div>
-      <div class="secondary">.jpg, .jpeg, .png, .pdf</div>
-      <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+    <p class="field-label">How do you want to submit it?</p>
+    <div class="pill-row" id="mode-row">
+      <button class="pill-btn selected" data-mode="upload">Upload photo / PDF</button>
+      <button class="pill-btn" data-mode="write">Write it here</button>
     </div>
-    <div class="file-chip" id="file-chip">
-      <span id="file-name"></span>
-      <button type="button" id="file-clear">Remove</button>
+
+    <div id="upload-panel">
+      <p class="hint">JPEG or PDF, up to 10&nbsp;MB. Handwritten or typed.</p>
+      <div class="dropzone" id="dropzone">
+        <div class="icon">&#128196;</div>
+        <div class="primary">Click to choose a file, or drag it here</div>
+        <div class="secondary">.jpg, .jpeg, .png, .pdf</div>
+        <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+      </div>
+      <div class="file-chip" id="file-chip">
+        <span id="file-name"></span>
+        <button type="button" id="file-clear">Remove</button>
+      </div>
+    </div>
+
+    <div id="write-panel" hidden>
+      <p class="hint">Type or paste your text. It is graded exactly as written &mdash; no transcription step.</p>
+      <textarea id="typed-text" spellcheck="false" placeholder="Start writing&hellip;"></textarea>
+      <div class="wordcount" id="wordcount">0 words</div>
     </div>
 
     <div style="margin-top:26px;">
@@ -224,20 +258,25 @@
         <button class="pill-btn" data-lang="en">English</button>
         <button class="pill-btn" data-lang="fr">Fran&ccedil;ais</button>
       </div>
-      <p class="field-label">Target CEFR level</p>
-      <div class="pill-row" id="level-row">
-        <button class="pill-btn" data-level="A1">A1</button>
-        <button class="pill-btn" data-level="A2">A2</button>
-        <button class="pill-btn" data-level="B1">B1</button>
-        <button class="pill-btn" data-level="B2">B2</button>
-        <button class="pill-btn" data-level="C1">C1</button>
+      <div id="exam-group" hidden>
+        <p class="field-label">Exam &mdash; graded on its official writing criteria</p>
+        <div class="pill-row" id="exam-row"></div>
+      </div>
+      <div id="level-group" hidden>
+        <p class="field-label">Target level</p>
+        <div class="pill-row" id="level-row"></div>
+      </div>
+      <div id="task-group" hidden>
+        <p class="field-label">Writing task</p>
+        <div class="pill-row" id="task-row"></div>
       </div>
     </div>
 
     <div class="btn-row">
       <button class="btn" id="btn-extract" disabled>Transcribe composition</button>
+      <button class="btn" id="btn-write-grade" disabled hidden>Grade this composition</button>
     </div>
-    <div class="spinner" id="spinner-extract"><span class="dot"></span> Reading the page&hellip; (first request can take ~20s while the model warms up)</div>
+    <div class="spinner" id="spinner-extract"><span class="dot"></span> <span id="spinner-extract-text">Reading the page&hellip; (first request can take ~20s while the model warms up)</span></div>
     <div class="error-banner" id="error-1"></div>
   </section>
 
@@ -269,7 +308,17 @@
 
     <div class="feedback-block" id="overall-feedback"></div>
 
-    <p class="errors-title">Criteria (12 pts each, 48 total)</p>
+    <div class="exam-score" id="exam-score" hidden>
+      <div class="head">
+        <span class="title" id="exam-score-title"></span>
+        <span class="total" id="exam-score-total"></span>
+      </div>
+      <table><tbody id="exam-score-rows"></tbody></table>
+      <p class="adj" id="exam-score-adj" hidden></p>
+      <p class="fine" id="exam-score-note"></p>
+    </div>
+
+    <p class="errors-title">Criteria (12 pts each)</p>
     <div class="criteria-grid" id="criteria-grid"></div>
 
     <div class="sw-grid">
@@ -296,27 +345,64 @@
 
 <script>
 (function () {
-  const state = { file: null, lang: null, level: null };
+  const state = { mode: 'upload', file: null, lang: null, exam: null, level: null, task: null, catalog: null };
 
   const CRITERIA_LABELS = {
-    de: { vocabulary: 'Wortschatz', coherence: 'Roter Faden', grammar: 'Grammatik', content_relevance: 'Inhalt' },
-    en: { vocabulary: 'Vocabulary', coherence: 'Coherence & Flow', grammar: 'Grammar', content_relevance: 'Content & Topic' },
-    fr: { vocabulary: 'Vocabulaire', coherence: 'Cohérence', grammar: 'Grammaire', content_relevance: 'Contenu' },
+    de: { vocabulary: 'Wortschatz', coherence: 'Roter Faden', grammar: 'Grammatik', content_relevance: 'Inhalt', sociolinguistic: 'Register', objectivity: 'Objektivität' },
+    en: { vocabulary: 'Vocabulary', coherence: 'Coherence & Flow', grammar: 'Grammar', content_relevance: 'Content & Topic', sociolinguistic: 'Register & Appropriateness', objectivity: 'Objectivity' },
+    fr: { vocabulary: 'Vocabulaire', coherence: 'Cohérence', grammar: 'Grammaire', content_relevance: 'Contenu', sociolinguistic: 'Adéquation sociolinguistique', objectivity: 'Objectivité' },
   };
-  const CRITERIA_ORDER = ['vocabulary', 'coherence', 'grammar', 'content_relevance'];
+  const CRITERIA_ORDER = ['content_relevance', 'coherence', 'sociolinguistic', 'objectivity', 'vocabulary', 'grammar'];
+  const TELC_SUFFIX = { B1: ' · Allgemein', B2: ' · Allgemein', C1: ' · Hochschule' };
 
-  const dropzone = document.getElementById('dropzone');
-  const fileInput = document.getElementById('file-input');
-  const fileChip = document.getElementById('file-chip');
-  const fileName = document.getElementById('file-name');
-  const fileClear = document.getElementById('file-clear');
-  const btnExtract = document.getElementById('btn-extract');
-  const spinnerExtract = document.getElementById('spinner-extract');
-  const error1 = document.getElementById('error-1');
+  const $ = id => document.getElementById(id);
+  const dropzone = $('dropzone'), fileInput = $('file-input'), fileChip = $('file-chip');
+  const fileName = $('file-name'), fileClear = $('file-clear');
+  const btnExtract = $('btn-extract'), btnWriteGrade = $('btn-write-grade');
+  const spinnerExtract = $('spinner-extract'), spinnerExtractText = $('spinner-extract-text');
+  const error1 = $('error-1'), typed = $('typed-text'), wordcount = $('wordcount');
+  const SPINNER_UPLOAD = spinnerExtractText.textContent;
 
-  function updateExtractEnabled() {
-    btnExtract.disabled = !(state.file && state.lang && state.level);
+  function currentExam() {
+    if (!state.catalog || !state.lang) return null;
+    return (state.catalog[state.lang] || []).find(e => e.id === state.exam) || null;
   }
+  function currentLevel() {
+    const exam = currentExam();
+    return exam ? exam.levels.find(l => l.level === state.level) || null : null;
+  }
+  function currentTask() {
+    const lvl = currentLevel();
+    return lvl ? lvl.tasks.find(t => t.id === state.task) || null : null;
+  }
+
+  function updateEnabled() {
+    const ready = state.lang && state.exam && state.level;
+    btnExtract.disabled = !(ready && state.file);
+    btnWriteGrade.disabled = !(ready && typed.value.trim());
+  }
+
+  function updateWordcount() {
+    const n = (typed.value.trim().match(/\S+/g) || []).length;
+    const task = currentTask();
+    wordcount.textContent = n + (n === 1 ? ' word' : ' words') +
+      (task && task.expected_words ? ' · expected ' + task.expected_words : '');
+    wordcount.classList.remove('short');
+    updateEnabled();
+  }
+  typed.addEventListener('input', updateWordcount);
+
+  function setMode(mode) {
+    state.mode = mode;
+    document.querySelectorAll('#mode-row .pill-btn').forEach(b => b.classList.toggle('selected', b.dataset.mode === mode));
+    $('upload-panel').hidden = mode !== 'upload';
+    $('write-panel').hidden = mode !== 'write';
+    btnExtract.hidden = mode !== 'upload';
+    btnWriteGrade.hidden = mode !== 'write';
+    $('step-pill-2').textContent = mode === 'upload' ? '2 · Review text' : '2 · Grade';
+    updateEnabled();
+  }
+  document.querySelectorAll('#mode-row .pill-btn').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 
   dropzone.addEventListener('click', () => fileInput.click());
   ['dragover', 'dragenter'].forEach(evt =>
@@ -334,14 +420,53 @@
     state.file = null;
     fileInput.value = '';
     fileChip.classList.remove('visible');
-    updateExtractEnabled();
+    updateEnabled();
   });
-
   function setFile(file) {
     state.file = file;
     fileName.textContent = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
     fileChip.classList.add('visible');
-    updateExtractEnabled();
+    updateEnabled();
+  }
+
+  // ---- exam / level / task pickers, built from /api/exams
+  function fillRow(rowId, items, selectedValue, onPick) {
+    const row = $(rowId);
+    row.innerHTML = '';
+    items.forEach(it => {
+      const b = document.createElement('button');
+      b.className = 'pill-btn' + (it.value === selectedValue ? ' selected' : '');
+      b.textContent = it.label;
+      b.addEventListener('click', () => onPick(it.value));
+      row.appendChild(b);
+    });
+  }
+
+  function renderPickers() {
+    const exams = state.lang && state.catalog ? state.catalog[state.lang] || [] : [];
+    $('exam-group').hidden = exams.length === 0;
+    fillRow('exam-row', exams.map(e => ({ value: e.id, label: e.label })), state.exam, id => {
+      state.exam = id; state.level = null; state.task = null; renderPickers();
+    });
+
+    const exam = currentExam();
+    $('level-group').hidden = !exam;
+    fillRow('level-row', exam ? exam.levels.map(l => ({
+      value: l.level,
+      label: l.level + (exam.id === 'telc' ? (TELC_SUFFIX[l.level] || '') : ''),
+    })) : [], state.level, lvl => {
+      state.level = lvl;
+      const l = currentLevel();
+      state.task = l && l.tasks.length ? l.tasks[0].id : null;
+      renderPickers();
+    });
+
+    const lvl = currentLevel();
+    const tasks = lvl ? lvl.tasks : [];
+    $('task-group').hidden = tasks.length < 2;
+    fillRow('task-row', tasks.map(t => ({ value: t.id, label: t.label + (t.expected_words ? ' (' + t.expected_words + ' words)' : '') })),
+      state.task, id => { state.task = id; renderPickers(); });
+    updateWordcount();
   }
 
   document.querySelectorAll('#lang-row .pill-btn').forEach(btn => {
@@ -349,24 +474,25 @@
       document.querySelectorAll('#lang-row .pill-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       state.lang = btn.dataset.lang;
-      updateExtractEnabled();
-    });
-  });
-  document.querySelectorAll('#level-row .pill-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#level-row .pill-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      state.level = btn.dataset.level;
-      updateExtractEnabled();
+      state.exam = null; state.level = null; state.task = null;
+      const exams = state.catalog ? state.catalog[state.lang] || [] : [];
+      if (exams.length) state.exam = exams[0].id;  // first listed exam is the language's default
+      renderPickers();
     });
   });
 
+  fetch('/api/exams').then(r => r.json()).then(c => { state.catalog = c; renderPickers(); })
+    .catch(() => {
+      error1.textContent = 'Could not load the exam list — please reload the page.';
+      error1.classList.add('visible');
+    });
+
   function setStep(n) {
-    document.getElementById('step-1').hidden = n !== 1;
-    document.getElementById('step-2').hidden = n !== 2;
-    document.getElementById('step-3').hidden = n !== 3;
+    $('step-1').hidden = n !== 1;
+    $('step-2').hidden = n !== 2;
+    $('step-3').hidden = n !== 3;
     [1, 2, 3].forEach(i => {
-      const pill = document.getElementById('step-pill-' + i);
+      const pill = $('step-pill-' + i);
       pill.classList.toggle('active', i === n);
       pill.classList.toggle('done', i < n);
     });
@@ -376,6 +502,7 @@
   async function extract() {
     error1.classList.remove('visible');
     btnExtract.disabled = true;
+    spinnerExtractText.textContent = SPINNER_UPLOAD;
     spinnerExtract.classList.add('visible');
     try {
       const form = new FormData();
@@ -383,26 +510,41 @@
       const res = await fetch('/api/extract', { method: 'POST', body: form });
       if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
       const data = await res.json();
-      document.getElementById('extracted-text').value = data.extracted_text;
+      $('extracted-text').value = data.extracted_text;
       setStep(2);
     } catch (err) {
       error1.textContent = 'Could not read the file: ' + err.message;
       error1.classList.add('visible');
     } finally {
       spinnerExtract.classList.remove('visible');
-      updateExtractEnabled();
+      updateEnabled();
     }
   }
   btnExtract.addEventListener('click', extract);
 
-  document.getElementById('btn-back-1').addEventListener('click', () => setStep(1));
+  $('btn-back-1').addEventListener('click', () => setStep(1));
 
-  const btnGrade = document.getElementById('btn-grade');
-  const spinnerGrade = document.getElementById('spinner-grade');
-  const error2 = document.getElementById('error-2');
+  const btnGrade = $('btn-grade'), spinnerGrade = $('spinner-grade'), error2 = $('error-2');
 
-  async function grade() {
-    const text = document.getElementById('extracted-text').value.trim();
+  async function postGrade(text) {
+    const res = await fetch('/api/grade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text, language_code: state.lang, target_level: state.level,
+        exam: state.exam, task: state.task,
+      }),
+    });
+    if (!res.ok) {
+      let detail = res.statusText;
+      try { const d = await res.json(); detail = typeof d.detail === 'string' ? d.detail : JSON.stringify(d.detail); } catch (e) {}
+      throw new Error(detail);
+    }
+    return res.json();
+  }
+
+  async function gradeReviewed() {
+    const text = $('extracted-text').value.trim();
     if (!text) {
       error2.textContent = 'The transcription is empty.';
       error2.classList.add('visible');
@@ -412,13 +554,7 @@
     btnGrade.disabled = true;
     spinnerGrade.classList.add('visible');
     try {
-      const res = await fetch('/api/grade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, language_code: state.lang, target_level: state.level }),
-      });
-      if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
-      renderResult(await res.json());
+      renderResult(await postGrade(text));
       setStep(3);
     } catch (err) {
       error2.textContent = 'Grading failed: ' + err.message;
@@ -428,24 +564,70 @@
       spinnerGrade.classList.remove('visible');
     }
   }
-  btnGrade.addEventListener('click', grade);
+  btnGrade.addEventListener('click', gradeReviewed);
+
+  async function gradeTyped() {
+    const text = typed.value.trim();
+    if (!text) return;
+    error1.classList.remove('visible');
+    btnWriteGrade.disabled = true;
+    spinnerExtractText.textContent = 'Grading…';
+    spinnerExtract.classList.add('visible');
+    try {
+      renderResult(await postGrade(text));
+      setStep(3);
+    } catch (err) {
+      error1.textContent = 'Grading failed: ' + err.message;
+      error1.classList.add('visible');
+    } finally {
+      spinnerExtract.classList.remove('visible');
+      updateEnabled();
+    }
+  }
+  btnWriteGrade.addEventListener('click', gradeTyped);
+
+  function renderExamScore(r) {
+    const box = $('exam-score');
+    const es = r.exam_score;
+    box.hidden = !es;
+    if (!es) return;
+    $('exam-score-title').textContent = es.exam + ' ' + es.level + ' · ' + es.task;
+    $('exam-score-total').textContent = es.total + ' / ' + es.max_total + '  (' + es.percent + '%)';
+    const rows = $('exam-score-rows');
+    rows.innerHTML = '';
+    es.criteria.forEach(c => {
+      const tr = document.createElement('tr');
+      const l = document.createElement('td'); l.textContent = c.label;
+      const b = document.createElement('td'); b.className = 'band'; b.textContent = c.band;
+      const p = document.createElement('td'); p.className = 'pts'; p.textContent = c.points + ' / ' + c.max_points;
+      tr.append(l, b, p);
+      rows.appendChild(tr);
+    });
+    const adj = $('exam-score-adj');
+    adj.hidden = !es.adjustments.length;
+    adj.textContent = es.adjustments.join(' ');
+    $('exam-score-note').textContent = 'Estimate from the official criteria, not an examiner\'s mark. ' + (es.note || '');
+  }
 
   function renderResult(r) {
-    document.getElementById('score-num').textContent = r.score_out_of_100;
-    document.getElementById('target-level-out').textContent = r.target_level;
+    $('score-num').textContent = r.score_out_of_100;
+    const taskLabel = r.exam_score ? r.exam_score.exam + ' ' + r.target_level + ' · ' + r.exam_score.task : r.target_level;
+    $('target-level-out').textContent = taskLabel;
 
-    const badge = document.getElementById('level-badge');
+    const badge = $('level-badge');
     badge.className = 'level-badge ' + r.level_confidence;
     const labelMap = { below: 'below target', at: 'at target', above: 'above target' };
     badge.textContent = r.achieved_level + ' · ' + (labelMap[r.level_confidence] || r.level_confidence);
 
-    document.getElementById('overall-feedback').textContent = r.overall_feedback;
+    $('overall-feedback').textContent = r.overall_feedback;
+    renderExamScore(r);
 
-    const criteriaGrid = document.getElementById('criteria-grid');
+    const criteriaGrid = $('criteria-grid');
     criteriaGrid.innerHTML = '';
     const labels = CRITERIA_LABELS[r.language] || CRITERIA_LABELS.en;
     CRITERIA_ORDER.forEach(key => {
       const c = r.criteria[key];
+      if (!c) return;
       const card = document.createElement('div');
       card.className = 'criterion-card';
 
@@ -474,23 +656,19 @@
       criteriaGrid.appendChild(card);
     });
 
-    const strengths = document.getElementById('strengths-list');
-    strengths.innerHTML = '';
-    (r.strengths || []).forEach(s => {
-      const li = document.createElement('li');
-      li.textContent = s;
-      strengths.appendChild(li);
-    });
+    const fillList = (id, items) => {
+      const ul = $(id);
+      ul.innerHTML = '';
+      (items || []).forEach(t => {
+        const li = document.createElement('li');
+        li.textContent = t;
+        ul.appendChild(li);
+      });
+    };
+    fillList('strengths-list', r.strengths);
+    fillList('weaknesses-list', r.weaknesses);
 
-    const weaknesses = document.getElementById('weaknesses-list');
-    weaknesses.innerHTML = '';
-    (r.weaknesses || []).forEach(w => {
-      const li = document.createElement('li');
-      li.textContent = w;
-      weaknesses.appendChild(li);
-    });
-
-    const list = document.getElementById('grammar-list');
+    const list = $('grammar-list');
     list.innerHTML = '';
     if (!r.grammar_errors || r.grammar_errors.length === 0) {
       const p = document.createElement('p');
@@ -525,13 +703,15 @@
     }
   }
 
-  document.getElementById('btn-restart').addEventListener('click', () => {
-    state.file = null; state.lang = null; state.level = null;
+  $('btn-restart').addEventListener('click', () => {
+    state.file = null; state.lang = null; state.exam = null; state.level = null; state.task = null;
     fileInput.value = '';
     fileChip.classList.remove('visible');
-    document.querySelectorAll('.pill-btn.selected').forEach(b => b.classList.remove('selected'));
-    document.getElementById('extracted-text').value = '';
-    updateExtractEnabled();
+    document.querySelectorAll('#lang-row .pill-btn.selected').forEach(b => b.classList.remove('selected'));
+    $('extracted-text').value = '';
+    typed.value = '';
+    renderPickers();
+    setMode('upload');
     setStep(1);
   });
 })();

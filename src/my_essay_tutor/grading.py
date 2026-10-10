@@ -13,6 +13,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from . import exams
 from .config import get_settings
 from .grammar_check import grammar_crosscheck
 from .models import CriteriaScores, GradingResult, GrammarError
@@ -39,6 +40,8 @@ class _GradingResponse(BaseModel):
     strengths: list[str]
     weaknesses: list[str]
     overall_feedback: str
+    # Only consulted by the DELF/DALF/Goethe exam-native scoring (exams.py).
+    off_topic: Literal["none", "thematic", "discursive", "complete"] = "none"
 
 LANGUAGE_NAMES = {"de": "German", "en": "English", "fr": "French"}
 
@@ -94,20 +97,55 @@ telc bands mapped to 0-12: A = self-assured, differentiated, near-clean (10-12);
 Score anchors (telc C1 HS, per criterion): 12 = A, 8 = B, 4 = C, 0 = D; intermediate values (10-11, 6-7, 2-3) interpolate within a band.""",
 }
 
-_PROMPT_TEMPLATE = """You are an expert {language} language teacher grading a student's written composition against the telc "Schreiben" assessment framework.
+# CriteriaScores requires these four for every exam; sociolinguistic/
+# objectivity are added only for DELF/DALF grids that have them.
+_BASE_KEYS = ("vocabulary", "coherence", "grammar", "content_relevance")
 
-The student was asked to write at the {target_level} level -- calibrated for the {telc_exam} exam:
+_CRITERION_MEANING = {
+    "telc": {
+        "vocabulary": "telc Wortschatz / Repertoire",
+        "coherence": "telc Kommunikative Gestaltung (structure, connectors, register, cohesion)",
+        "grammar": "telc Formale Richtigkeit / Korrektheit (grammar, syntax, spelling, punctuation)",
+        "content_relevance": "telc Aufgabenbewaeltigung / Aufgabengerechtheit (Leitpunkte/task fully treated)",
+    },
+    "goethe": {
+        "vocabulary": "Wortschatz (Spektrum + Beherrschung)",
+        "coherence": "Kohaerenz (Textaufbau, Logik, Verknuepfung)",
+        "grammar": "Strukturen (Spektrum + Beherrschung: Morphologie, Syntax, Orthografie)",
+        "content_relevance": "Aufgabenerfuellung (Inhalt, Umfang, Sprachfunktionen, Register)",
+    },
+    "delf": {
+        "vocabulary": "Lexique",
+        "coherence": "Coherence et cohesion",
+        "grammar": "Morphosyntaxe",
+        "content_relevance": "Realisation de la tache",
+        "sociolinguistic": "Adequation sociolinguistique (register, conventions of the situation)",
+        "objectivity": "Respect de la regle d'objectivite (no personal opinion; synthese only)",
+    },
+    "generic": {
+        "vocabulary": "range and precision of vocabulary for the level",
+        "coherence": "organisation, connectors, logical flow",
+        "grammar": "grammatical accuracy, syntax, spelling, punctuation",
+        "content_relevance": "relevance to the topic and development of ideas",
+    },
+}
 
-{telc_rubric}
+_GENERIC_RUBRIC = """Task type: a free composition at the target CEFR level. There is no exam-specific task sheet; judge the text against the CEFR descriptors below:
+- content_relevance: stays on topic, ideas developed to the depth the level expects.
+- coherence: clear organisation, appropriate connectors, consistent register.
+- grammar + vocabulary: range and control appropriate to the level; errors that block understanding weigh more than slips."""
 
+_PROMPT_TEMPLATE = """You are an expert {language} language teacher grading a student's written composition against {framework}.
+
+The student was asked to write at the {target_level} level -- calibrated for the {exam_label} exam:
+
+{rubric}
+{task_block}
 CEFR level descriptors (for judging achieved_level, the writer's ACTUAL level -- not the target):
 {descriptors}
 
-Grade the essay below. Score these four schema criteria, 12 points each (48 total), applying the telc criteria and band mapping above:
-- vocabulary: telc Wortschatz / Repertoire.
-- coherence: telc Kommunikative Gestaltung (structure, connectors, register, cohesion).
-- grammar: telc Formale Richtigkeit / Korrektheit (grammar, syntax, spelling, punctuation).
-- content_relevance: telc Aufgabenbewaeltigung / Aufgabengerechtheit (Leitpunkte/task fully treated).
+Grade the essay below. Score these schema criteria, 12 points each, applying the criteria and band mapping above:
+{criteria_lines}
 
 Return ONLY a JSON object (no markdown fences, no commentary) matching exactly this schema:
 {{
@@ -117,11 +155,9 @@ Return ONLY a JSON object (no markdown fences, no commentary) matching exactly t
   "achieved_level": "A1"|"A2"|"B1"|"B2"|"C1",
   "level_confidence": "below"|"at"|"above",
   "criteria": {{
-    "vocabulary": {{"score": <integer 0-12>, "comment": "<1 sentence, in {language}>"}},
-    "coherence": {{"score": <integer 0-12>, "comment": "<1 sentence, in {language}>"}},
-    "grammar": {{"score": <integer 0-12>, "comment": "<1 sentence, in {language}>"}},
-    "content_relevance": {{"score": <integer 0-12>, "comment": "<1 sentence, in {language}>"}}
+{criteria_schema}
   }},
+  "off_topic": "none"|"thematic"|"discursive"|"complete",
   "strengths": ["..."],
   "weaknesses": ["..."],
   "overall_feedback": "2-4 sentences of constructive feedback, written directly to the student, in {language}."
@@ -131,19 +167,55 @@ Rules:
 - Quote exact substrings from the essay in "original" so they can be located and highlighted.
 - Find every grammar, spelling and syntax error, however small.
 - Score each criterion realistically against the target level {target_level}: flawless work at that level scores 10-12 on a criterion; systematic weakness scores under 6.
+- "off_topic": "none" unless the text does not address the task: "thematic" = wrong subject, "discursive" = right subject but wrong text type/function, "complete" = both.
 - If the essay text looks garbled or clearly broken by OCR (isolated nonsense characters, no coherent words), say so plainly in overall_feedback instead of inventing errors for text that likely isn't what the student wrote.
 """
 
 
-def _build_prompt(language: str, target_level: str) -> str:
-    if target_level not in _TELC_RUBRICS:
+def _build_prompt(language: str, target_level: str, exam: exams.Exam, task: exams.Task | None,
+                  word_count: int = 0) -> str:
+    if target_level not in exam.levels:
         raise ValueError(f"Unsupported target_level: {target_level}")
+
+    if exam.id == "telc":
+        framework = 'the telc "Schreiben" assessment framework'
+        exam_label = _TELC_EXAMS[target_level]
+        rubric = _TELC_RUBRICS[target_level]
+        task_block = ""
+        keys = _BASE_KEYS
+        meaning = _CRITERION_MEANING["telc"]
+    elif task is None:  # generic CEFR
+        framework = "the CEFR descriptors for the target level"
+        exam_label = f"general CEFR {target_level}"
+        rubric = _GENERIC_RUBRIC
+        task_block = ""
+        keys = _BASE_KEYS
+        meaning = _CRITERION_MEANING["generic"]
+    else:
+        framework = f"the official {exam.label.split(' (')[0]} writing assessment grid"
+        exam_label = f"{exam.label.split(' (')[0]} {target_level}"
+        rubric = task.rubric
+        task_block = (
+            f"\nTask being assessed: {task.label}. {task.brief}\n"
+            f"Expected length: {task.expected_words} words; the submitted text has {word_count} words.\n"
+        )
+        keys = _BASE_KEYS + tuple(
+            k for k in ("sociolinguistic", "objectivity") if any(k in c.keys for c in task.criteria)
+        )
+        meaning = _CRITERION_MEANING[exam.scheme]
+
     return _PROMPT_TEMPLATE.format(
         language=language,
+        framework=framework,
         target_level=target_level,
-        telc_exam=_TELC_EXAMS[target_level],
-        telc_rubric=_TELC_RUBRICS[target_level],
+        exam_label=exam_label,
+        rubric=rubric,
+        task_block=task_block,
         descriptors=CEFR_DESCRIPTORS,
+        criteria_lines="\n".join(f"- {k}: {meaning[k]}." for k in keys),
+        criteria_schema=",\n".join(
+            f'    "{k}": {{"score": <integer 0-12>, "comment": "<1 sentence, in {language}>"}}' for k in keys
+        ),
     )
 
 
@@ -222,13 +294,19 @@ def _call_anthropic(prompt: str, essay_text: str) -> _GradingResponse:
 _CALLERS = {"glm": _call_glm, "gemini": _call_gemini, "anthropic": _call_anthropic}
 
 
-def grade_essay(text: str, language_code: str, target_level: str) -> GradingResult:
+def grade_essay(text: str, language_code: str, target_level: str, exam: str | None = None,
+                task: str | None = None) -> GradingResult:
+    """exam/task select an official writing-assessment framework (see
+    exams.py); omitted, the legacy per-language default applies (telc for
+    German, DELF/DALF by level for French, generic CEFR for English)."""
     if language_code not in LANGUAGE_NAMES:
         raise ValueError(f"Unsupported language_code: {language_code}")
 
     settings = get_settings()
     language = LANGUAGE_NAMES[language_code]
-    prompt = _build_prompt(language, target_level)
+    exam_obj, task_obj = exams.resolve(language_code, exam, target_level, task)
+    word_count = len(text.split())
+    prompt = _build_prompt(language, target_level, exam_obj, task_obj, word_count)
 
     caller = _CALLERS.get(settings.grading_provider)
     if caller is None:
@@ -237,12 +315,22 @@ def grade_essay(text: str, language_code: str, target_level: str) -> GradingResu
     data = caller(prompt, text)  # a validated _GradingResponse, not a raw dict
 
     criteria = data.criteria
-    # Derived, not trusted from the model's own arithmetic: sum of the four
-    # 12-point criteria, scaled to /100 (48 points max -> x100/48).
-    criteria_total = (
-        criteria.vocabulary.score + criteria.coherence.score + criteria.grammar.score + criteria.content_relevance.score
+    scored = [criteria.vocabulary, criteria.coherence, criteria.grammar, criteria.content_relevance]
+    if task_obj is not None:
+        needed = {k for c in task_obj.criteria for k in c.keys}
+        missing = [k for k in needed if getattr(criteria, k) is None]
+        if missing:
+            raise RuntimeError(f"Grading response is missing criteria required by {exam_obj.id}: {', '.join(missing)}")
+        scored += [getattr(criteria, k) for k in ("sociolinguistic", "objectivity")
+                   if k in needed]
+    # Derived, not trusted from the model's own arithmetic: mean of the
+    # exam's 12-point criteria, scaled to /100.
+    score_out_of_100 = round(sum(c.score for c in scored) * 100 / (12 * len(scored)))
+
+    exam_score = (
+        exams.score_task(exam_obj, target_level, task_obj, criteria, word_count, data.off_topic)
+        if task_obj is not None else None
     )
-    score_out_of_100 = round(criteria_total * 100 / 48)
 
     return GradingResult(
         language=language_code,
@@ -256,5 +344,9 @@ def grade_essay(text: str, language_code: str, target_level: str) -> GradingResu
         strengths=data.strengths,
         weaknesses=data.weaknesses,
         overall_feedback=data.overall_feedback,
+        word_count=word_count,
+        exam=exam_obj.id,
+        task=task_obj.id if task_obj else None,
+        exam_score=exam_score,
         grammar_crosscheck=grammar_crosscheck(text, language_code),
     )

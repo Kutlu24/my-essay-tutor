@@ -1,6 +1,6 @@
 # My Essay Tutor
 
-Students upload a composition (photo or PDF, handwritten or typed) in German, English or French, pick a target CEFR level (A1&ndash;C1), and get back a transcription, a list of grammar/spelling errors with corrections, and a level score.
+Students upload a composition (photo or PDF, handwritten or typed) **or write it directly in the page**, in German, English or French, pick an exam and target level, and get back a transcription (uploads), a list of grammar/spelling errors with corrections, a level score and an exam-style result.
 
 ## Architecture
 
@@ -45,6 +45,26 @@ where GLM's text models (grading) work fine on the free tier -- it fails with
 `"Insufficient balance or no resource package"` (error 1113). Gemini's vision models
 are covered by the same free-tier key already used elsewhere this session. Set
 `OCR_PROVIDER=glm` instead if the GLM account is topped up.
+
+## Exams and their official criteria
+
+`exams.py` is the catalog (served at `GET /api/exams`; the frontend builds its pickers from it). The grading
+prompt and the exam-native scoring both come from the official rating documents, read 2026-10-10:
+
+| Language | Exam | Levels | Criteria (source) |
+|---|---|---|---|
+| de | telc | A1–C1 | Leitpunkte / Kommunikative Gestaltung / Formale Richtigkeit (telc handbooks) |
+| de | Goethe-Zertifikat | A2, B1, B2, C1 | Aufgabenerfüllung, Kohärenz, Wortschatz, Strukturen, bands A–E with per-task point weights (A2: Aufgabenerfüllung + Sprache); E on Aufgabenerfüllung = 0 for the task (Goethe Modellsatz *Bewertungskriterien/Bewertungsbogen Schreiben*) |
+| fr | DELF | A1–B2 | FEI *grille d'évaluation de la production écrite*: réalisation de la tâche, cohérence et cohésion, adéquation sociolinguistique, lexique, morphosyntaxe; 4 performance levels with fixed points; < 50 % of expected words = 0; off-topic caps |
+| fr | DALF | C1 | same grid per task: *essai* (5 × 2.5) and *synthèse* (objectivité, tâche, cohérence, lexique, morphosyntaxe = 12 of 12.5; the length criterion is not assessed) |
+| en, fr | General CEFR | A1–C1 | CEFR descriptors only (no exam sheet) |
+
+Not offered because no official rating sheet could be retrieved: Goethe A1, DALF C2, Goethe C2.
+
+The LLM still scores each criterion 0–12; `exams.score_task` quantizes that into the exam's bands and point
+values and applies the hard rules (zero rule, off-topic caps). The quantization thresholds are this project's
+choice, so the exam-native number is an **estimate, not an examiner's mark**. Each result covers one writing
+task, not the whole exam module/diploma.
 
 ## Validated grading output, and an independent grammar cross-check (opt-in)
 

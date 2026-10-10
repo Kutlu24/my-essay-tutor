@@ -42,13 +42,19 @@ def extract_essay_text(file_base64: str, is_pdf: bool = False) -> str:
 
 
 @mcp.tool()
-def grade_essay(text: str, language_code: str, target_level: str) -> dict:
+def grade_essay(text: str, language_code: str, target_level: str, exam: str | None = None,
+                task: str | None = None) -> dict:
     """Grade a student essay for grammar and CEFR level.
 
     language_code: "de" | "en" | "fr"
     target_level: "A1" | "A2" | "B1" | "B2" | "C1"
+    exam: optional framework -- "telc" | "goethe" (de), "delf" (fr A1-B2),
+        "dalf" (fr C1), "cefr" (en/fr generic). Default: telc for German,
+        DELF/DALF for French, cefr for English.
+    task: optional writing task id within the exam, e.g. "t1"/"t2"/"t3"
+        (Goethe), "essai"/"synthese" (DALF C1).
     """
-    result = grading.grade_essay(text, language_code, target_level)
+    result = grading.grade_essay(text, language_code, target_level, exam, task)
     return result.model_dump()
 
 

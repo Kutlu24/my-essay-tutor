@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from pydantic import BaseModel
 
-from .. import grading, ocr, pdf_utils
+from .. import exams, grading, ocr, pdf_utils
 from ..config import get_settings
 from ..models import GradingResult
 
@@ -110,10 +110,18 @@ async def extract(file: UploadFile = File(...)) -> ExtractResponse:
     return ExtractResponse(extracted_text="\n\n".join(t for t in page_texts if t), pages=len(pages))
 
 
+@app.get("/api/exams")
+def list_exams() -> dict:
+    """Exam catalog (language -> exams -> levels -> tasks) the frontend builds its pickers from."""
+    return exams.catalog()
+
+
 class GradeRequest(BaseModel):
     text: str
     language_code: str
     target_level: str
+    exam: str | None = None  # see /api/exams; omitted -> per-language default
+    task: str | None = None
 
 
 @app.post("/api/grade", response_model=GradingResult)
@@ -124,8 +132,14 @@ def grade(req: GradeRequest) -> GradingResult:
         raise HTTPException(400, "target_level must be one of: A1, A2, B1, B2, C1")
     if not req.text.strip():
         raise HTTPException(400, "text is empty")
+    if len(req.text) > 20_000:
+        raise HTTPException(413, "text exceeds 20,000 characters")
+    try:
+        exams.resolve(req.language_code, req.exam, req.target_level, req.task)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
     try:
-        return grading.grade_essay(req.text, req.language_code, req.target_level)
+        return grading.grade_essay(req.text, req.language_code, req.target_level, req.exam, req.task)
     except Exception as e:
         raise HTTPException(502, f"Grading failed: {e}")

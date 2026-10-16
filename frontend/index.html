@@ -43,23 +43,105 @@
     min-height: 100dvh; display: flex; flex-direction: column;
   }
   .wrap > .card, .wrap > .steps { flex: 0 0 auto; }
-  header { text-align: center; margin-bottom: 40px; flex: 0 0 auto; }
+  header { margin-bottom: 34px; flex: 0 0 auto; }
+
+  /* ---- hero: text on the left, illustrated result card on the right ---- */
+  .hero {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr);
+    gap: clamp(22px, 4vw, 48px);
+    align-items: center;
+    padding: clamp(10px, 2vw, 20px) 0 clamp(16px, 2.5vw, 28px);
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(31,43,77,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(31,43,77,.045) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(120% 90% at 62% 12%, #000 0%, transparent 72%);
+    -webkit-mask-image: radial-gradient(120% 90% at 62% 12%, #000 0%, transparent 72%);
+    pointer-events: none;
+  }
+  .hero-text { position: relative; z-index: 1; }
   .kicker {
     display: inline-flex; align-items: center; gap: 8px;
     font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--accent);
     background: var(--accent-soft); border: 1px solid rgba(138,51,36,0.18);
-    padding: 5px 12px; border-radius: 12px; margin-bottom: 18px;
+    padding: 5px 12px; border-radius: 12px; margin-bottom: 16px;
     max-width: 100%; text-align: center; flex-wrap: wrap; justify-content: center; line-height: 1.5;
   }
   h1 {
     font-family: var(--font-display); font-weight: 700;
-    font-size: clamp(2.1rem, 5.5vw, 3.3rem); margin: 0 0 12px; letter-spacing: -0.01em;
+    font-size: clamp(2.3rem, 6vw, 3.9rem); line-height: 1.08;
+    margin: 0 0 12px; letter-spacing: -0.02em; color: var(--ink);
     text-wrap: balance;
   }
-  .subtitle { color: var(--ink-soft); font-size: 1.06rem; max-width: 720px; margin: 0 auto; }
+  .subtitle { color: var(--ink-soft); font-size: clamp(1rem, 1.4vw, 1.1rem); max-width: 52ch; margin: 0; }
 
-  .steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 28px 0 36px; font-family: var(--font-mono); font-size: 0.72rem; }
+  /* hero artwork — a mock grading result, same card language as the grammar site */
+  .hero-art { position: relative; z-index: 1; min-height: 272px; }
+  .art-card {
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 18px;
+    padding: 15px 17px;
+    box-shadow: 0 24px 48px -20px rgba(31,43,77,.28), 0 2px 6px rgba(31,43,77,.05);
+  }
+  .art-main { position: relative; z-index: 2; transform: rotate(-1.2deg); }
+  .art-head {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: .66rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px;
+  }
+  .art-head .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px rgba(47,107,79,.18); }
+  .art-score { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
+  .art-ring {
+    width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0; position: relative;
+    display: grid; place-items: center; align-content: center; gap: 1px;
+    background: conic-gradient(var(--accent) 0 72%, var(--line) 72% 100%);
+  }
+  .art-ring::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--paper-raised); }
+  .art-ring span, .art-ring small { position: relative; z-index: 1; }
+  .art-ring span { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; line-height: 1; color: var(--ink); }
+  .art-ring small { font-family: var(--font-mono); font-size: .52rem; color: var(--ink-faint); }
+  .art-level b {
+    display: inline-block; font-family: var(--font-mono); font-weight: 600; font-size: .86rem;
+    color: var(--good); background: var(--good-soft); border: 1px solid rgba(47,107,79,.3);
+    padding: 2px 9px; border-radius: 8px; margin-bottom: 4px;
+  }
+  .art-level span { display: block; font-size: .72rem; color: var(--ink-soft); line-height: 1.35; }
+  .art-bars { display: grid; gap: 7px; }
+  .art-bar { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 10px; }
+  .art-bar span { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); }
+  .art-bar i { display: block; height: 6px; border-radius: 999px; background: var(--line); position: relative; overflow: hidden; }
+  .art-bar i::after {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w, 70%);
+    background: linear-gradient(90deg, var(--accent), #d97706); border-radius: 999px;
+  }
+  .art-side {
+    position: absolute; right: -4px; top: 158px; z-index: 3;
+    width: min(248px, 70%); transform: rotate(2.4deg); padding: 12px 14px;
+  }
+  .art-side .t { font-family: var(--font-mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 7px; }
+  .art-side ul { list-style: none; margin: 0; padding: 0; font-size: .76rem; }
+  .art-side li { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+  .art-side li:last-child { border-bottom: 0; padding-bottom: 0; }
+  .art-side .bad { text-decoration: line-through; text-decoration-color: rgba(168,114,26,.75); color: var(--ink-faint); font-style: normal; }
+  .art-side .good { color: var(--good); font-weight: 700; font-style: normal; font-family: var(--font-display); }
+  .art-side .arrow { color: var(--ink-faint); font-size: .66rem; }
+  .art-pills { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .art-pill {
+    position: absolute; font-family: var(--font-mono); font-weight: 600;
+    font-size: .64rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: 5px 11px; border-radius: 999px; color: #fff; white-space: nowrap;
+    box-shadow: 0 8px 18px -8px rgba(31,43,77,.5);
+  }
+  .art-pill.p1 { background: var(--ink); top: -12px; left: -6px; transform: rotate(-4deg); }
+  .art-pill.p2 { background: var(--accent); top: 96px; right: -10px; transform: rotate(3deg); }
+  .art-pill.p3 { background: var(--good); bottom: 34px; left: -10px; transform: rotate(-2deg); }
+
+  .steps { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px; margin: 2px 0 26px; font-family: var(--font-mono); font-size: 0.72rem; }
   .step-pill {
     padding: 5px 12px; border-radius: 999px; color: var(--ink-faint);
     background: var(--paper-raised); border: 1px solid var(--line); letter-spacing: 0.04em;
@@ -68,11 +150,13 @@
   .step-pill.done { color: var(--good); border-color: var(--good); background: var(--good-soft); }
 
   .card {
-    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 16px;
-    padding: clamp(18px, 4.5vw, 32px); box-shadow: 0 1px 2px rgba(31,43,77,0.04);
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 18px;
+    padding: clamp(18px, 4.5vw, 32px);
+    box-shadow: 0 1px 2px rgba(31,43,77,0.04), 0 10px 28px -18px rgba(31,43,77,0.18);
+    border-left: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
   }
   .card + .card { margin-top: 20px; }
-  .card h2 { font-family: var(--font-display); font-size: 1.35rem; margin: 0 0 6px; }
+  .card h2 { font-family: var(--font-display); font-size: clamp(1.3rem, 2.4vw, 1.6rem); margin: 0 0 6px; letter-spacing: -.01em; }
   .hint { color: var(--ink-faint); font-size: 0.88rem; margin: 0 0 22px; }
 
   .field-label { font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px; }
@@ -222,10 +306,15 @@
   .pill-btn { max-width: 100%; text-align: left; }
   /* keep the last row of controls clear of the floating module switcher */
   .wrap { padding-bottom: calc(clamp(28px, 6vw, 56px) + 44px); }
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; gap: 18px; }
+    .hero-art { display: none; }
+    .hero::before { mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, transparent 70%); -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, transparent 70%); }
+  }
   @media (max-width: 759px) {
     .wrap { padding-bottom: calc(clamp(28px, 6vw, 56px) + 64px); }
-    header { margin-bottom: 26px; }
-    .steps { margin: 20px 0 26px; }
+    header { margin-bottom: 22px; }
+    .steps { margin: 18px 0 22px; }
     .s1-grid, .res-grid { display: block; }
     .s1-right, .res-right { margin-top: 22px; }
     .dropzone { padding: 26px 14px; }
@@ -373,10 +462,39 @@
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <span class="kicker" id="app-kicker">A1 &rarr; C1 &middot; telc &middot; Goethe &middot; DELF/DALF &middot; DE / EN / FR</span>
-    <h1 id="app-title">My Essay Tutor</h1>
-    <p class="subtitle" data-i18n="subtitle">Upload a composition as a photo or PDF, or write it right here. It's checked for grammar and scored against the exam and level you pick.</p>
+  <header class="hero">
+    <div class="hero-text">
+      <span class="kicker" id="app-kicker">A1 &rarr; C1 &middot; telc &middot; Goethe &middot; DELF/DALF &middot; DE / EN / FR</span>
+      <h1 id="app-title">My Essay Tutor</h1>
+      <p class="subtitle" data-i18n="subtitle">Upload a composition as a photo or PDF, or write it right here. It's checked for grammar and scored against the exam and level you pick.</p>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="art-card art-main">
+        <div class="art-head"><span class="dot"></span> Bewertung &middot; telc B2</div>
+        <div class="art-score">
+          <div class="art-ring"><span>72</span><small>/ 100</small></div>
+          <div class="art-level"><b>B2</b><span>Zielniveau sicher erreicht</span></div>
+        </div>
+        <div class="art-bars">
+          <div class="art-bar"><span>Inhalt</span><i style="--w:83%"></i></div>
+          <div class="art-bar"><span>Struktur</span><i style="--w:75%"></i></div>
+          <div class="art-bar"><span>Sprache</span><i style="--w:66%"></i></div>
+        </div>
+      </div>
+      <div class="art-card art-side">
+        <div class="t">Gefundene Fehler</div>
+        <ul>
+          <li><em class="bad">&uuml;ber die Probleme</em><span class="arrow">&rarr;</span><em class="good">die Probleme</em></li>
+          <li><em class="bad">er nicht hat</em><span class="arrow">&rarr;</span><em class="good">er nicht hatte</em></li>
+          <li><em class="bad">der Gelegenheit</em><span class="arrow">&rarr;</span><em class="good">die Gelegenheit</em></li>
+        </ul>
+      </div>
+      <div class="art-pills">
+        <span class="art-pill p1">telc</span>
+        <span class="art-pill p2">Goethe</span>
+        <span class="art-pill p3">DELF</span>
+      </div>
+    </div>
   </header>
 
   <div class="steps">

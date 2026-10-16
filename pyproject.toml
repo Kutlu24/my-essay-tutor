@@ -42,3 +42,4 @@ where = ["src"]
 # install has API routes but no UI.
 [tool.setuptools.package-data]
 "my_essay_tutor.frontend" = ["**/*"]
+my_essay_tutor = ["grammar_rules.json"]

@@ -6,6 +6,11 @@ class GrammarError(BaseModel):
     correction: str
     explanation: str
     category: str
+    # Link to the matching rule on the DeutschGrammatikMeister site (German essays only; see rules.py).
+    rule_id: str | None = None
+    rule_title: str | None = None
+    rule_level: str | None = None
+    rule_url: str | None = None
 
 
 class CriterionScore(BaseModel):

@@ -14,7 +14,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from . import exams
+from . import exams, rules
 from .config import get_settings
 from .grammar_check import extra_matches, grammar_crosscheck
 from .models import CriteriaScores, GradingResult, GrammarError
@@ -158,7 +158,7 @@ Grade the essay below. Score these schema criteria, 12 points each, applying the
 Return ONLY a JSON object (no markdown fences, no commentary) matching exactly this schema:
 {{
   "grammar_errors": [
-    {{"original": "<exact span from the essay>", "correction": "<corrected form>", "explanation": "<short reason, in {language}>", "category": "<e.g. verb conjugation, article/gender, word order, spelling, preposition>"}}
+    {{"original": "<exact span from the essay>", "correction": "<corrected form>", "explanation": "<short reason, in {language}>", "category": "<e.g. verb conjugation, article/gender, word order, spelling, preposition>"{rule_field}}}
   ],
   "achieved_level": "A1"|"A2"|"B1"|"B2"|"C1",
   "level_confidence": "below"|"at"|"above",
@@ -173,7 +173,7 @@ Return ONLY a JSON object (no markdown fences, no commentary) matching exactly t
 
 Rules:
 - Quote exact substrings from the essay in "original" so they can be located and highlighted.
-- Find every grammar, spelling and syntax error, however small.{spelling_rule}
+- Find every grammar, spelling and syntax error, however small.{spelling_rule}{rule_section}
 - Score each criterion realistically against the target level {target_level}: flawless work at that level scores 10-12 on a criterion; systematic weakness scores under 6.
 - "off_topic": "none" unless the text does not address the task: "thematic" = wrong subject, "discursive" = right subject but wrong text type/function, "complete" = both.
 - If the essay text looks garbled or clearly broken by OCR (isolated nonsense characters, no coherent words), say so plainly in overall_feedback instead of inventing errors for text that likely isn't what the student wrote.
@@ -214,6 +214,8 @@ def _build_prompt(language: str, target_level: str, exam: exams.Exam, task: exam
 
     return _PROMPT_TEMPLATE.format(
         spelling_rule=_GERMAN_SPELLING_RULE if language == "German" else "",
+        rule_field=', "rule_id": "<catalog id or null>"' if language == "German" else "",
+        rule_section=rules.prompt_section() if language == "German" else "",
         language=language,
         framework=framework,
         target_level=target_level,
@@ -350,7 +352,7 @@ def grade_essay(text: str, language_code: str, target_level: str, exam: str | No
         language=language_code,
         target_level=target_level,
         extracted_text=text,
-        grammar_errors=data.grammar_errors,
+        grammar_errors=rules.attach_rules(data.grammar_errors),
         achieved_level=data.achieved_level,
         level_confidence=data.level_confidence,
         criteria=criteria,

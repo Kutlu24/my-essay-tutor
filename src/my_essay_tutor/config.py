@@ -25,6 +25,10 @@ class Settings(BaseSettings):
 
     max_upload_mb: int = 10
 
+    # Base URL of the DeutschGrammatikMeister site that grammar errors link to (empty = the default
+    # in grammar_rules.json). Set GRAMMAR_SITE_URL if it is hosted somewhere else.
+    grammar_site_url: str = ""
+
     # Independent, non-LLM grammar cross-check (grammar_check.py) - off by
     # default. Exists so the grading pipeline isn't the only thing checking
     # its own grammar-error list, but not yet wired to influence grading or

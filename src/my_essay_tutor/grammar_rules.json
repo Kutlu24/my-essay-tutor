@@ -1,0 +1,353 @@
+{
+ "site_url": "https://kutlu24.github.io/deutsch-grammatik-meister/",
+ "rules": [
+  {
+   "id": "a1-artikel-genus",
+   "level": "A1",
+   "title": "Artikel und Genus (der, die, das)",
+   "url": "a1.html#a1-artikel-genus"
+  },
+  {
+   "id": "a1-plural",
+   "level": "A1",
+   "title": "Pluralbildung",
+   "url": "a1.html#a1-plural"
+  },
+  {
+   "id": "a1-praesens-regelmaessig",
+   "level": "A1",
+   "title": "Präsens: regelmäßige Verben",
+   "url": "a1.html#a1-praesens-regelmaessig"
+  },
+  {
+   "id": "a1-praesens-unregelmaessig",
+   "level": "A1",
+   "title": "Präsens: Verben mit Vokalwechsel",
+   "url": "a1.html#a1-praesens-unregelmaessig"
+  },
+  {
+   "id": "a1-sein-haben",
+   "level": "A1",
+   "title": "sein und haben",
+   "url": "a1.html#a1-sein-haben"
+  },
+  {
+   "id": "a1-satzbau-verbposition",
+   "level": "A1",
+   "title": "Satzbau: Das Verb steht an Position 2",
+   "url": "a1.html#a1-satzbau-verbposition"
+  },
+  {
+   "id": "a1-negation",
+   "level": "A1",
+   "title": "Verneinung: nicht und kein",
+   "url": "a1.html#a1-negation"
+  },
+  {
+   "id": "a1-nominativ-akkusativ",
+   "level": "A1",
+   "title": "Nominativ und Akkusativ",
+   "url": "a1.html#a1-nominativ-akkusativ"
+  },
+  {
+   "id": "a1-possessivartikel",
+   "level": "A1",
+   "title": "Possessivartikel (mein, dein, …)",
+   "url": "a1.html#a1-possessivartikel"
+  },
+  {
+   "id": "a1-trennbare-verben",
+   "level": "A1",
+   "title": "Trennbare Verben",
+   "url": "a1.html#a1-trennbare-verben"
+  },
+  {
+   "id": "a1-modalverben",
+   "level": "A1",
+   "title": "Modalverben (können, müssen, wollen, …)",
+   "url": "a1.html#a1-modalverben"
+  },
+  {
+   "id": "a2-perfekt-bildung",
+   "level": "A2",
+   "title": "Perfekt: Bildung mit haben/sein + Partizip II",
+   "url": "a2.html#a2-perfekt-bildung"
+  },
+  {
+   "id": "a2-perfekt-hilfsverb",
+   "level": "A2",
+   "title": "Perfekt: haben oder sein?",
+   "url": "a2.html#a2-perfekt-hilfsverb"
+  },
+  {
+   "id": "a2-praeteritum-sein-haben-modal",
+   "level": "A2",
+   "title": "Präteritum von sein, haben und Modalverben",
+   "url": "a2.html#a2-praeteritum-sein-haben-modal"
+  },
+  {
+   "id": "a2-dativ",
+   "level": "A2",
+   "title": "Dativ: Artikel und typische Verben",
+   "url": "a2.html#a2-dativ"
+  },
+  {
+   "id": "a2-praepositionen-dativ-akkusativ",
+   "level": "A2",
+   "title": "Präpositionen mit festem Kasus",
+   "url": "a2.html#a2-praepositionen-dativ-akkusativ"
+  },
+  {
+   "id": "a2-wechselpraepositionen",
+   "level": "A2",
+   "title": "Wechselpräpositionen: wo? oder wohin?",
+   "url": "a2.html#a2-wechselpraepositionen"
+  },
+  {
+   "id": "a2-konjunktionen-hauptsatz",
+   "level": "A2",
+   "title": "Hauptsatz-Konjunktionen: und, oder, aber, denn, sondern",
+   "url": "a2.html#a2-konjunktionen-hauptsatz"
+  },
+  {
+   "id": "a2-nebensatz-weil-dass",
+   "level": "A2",
+   "title": "Nebensätze mit weil und dass",
+   "url": "a2.html#a2-nebensatz-weil-dass"
+  },
+  {
+   "id": "a2-komparativ-superlativ",
+   "level": "A2",
+   "title": "Komparativ und Superlativ",
+   "url": "a2.html#a2-komparativ-superlativ"
+  },
+  {
+   "id": "a2-reflexive-verben",
+   "level": "A2",
+   "title": "Reflexive Verben",
+   "url": "a2.html#a2-reflexive-verben"
+  },
+  {
+   "id": "a2-imperativ",
+   "level": "A2",
+   "title": "Imperativ",
+   "url": "a2.html#a2-imperativ"
+  },
+  {
+   "id": "a2-adjektivdeklination-unbestimmt",
+   "level": "A2",
+   "title": "Adjektivendungen nach ein-/kein-/mein-",
+   "url": "a2.html#a2-adjektivdeklination-unbestimmt"
+  },
+  {
+   "id": "b1-adjektivdeklination",
+   "level": "B1",
+   "title": "Adjektivdeklination nach bestimmtem Artikel und ohne Artikel",
+   "url": "b1.html#b1-adjektivdeklination"
+  },
+  {
+   "id": "b1-praeteritum",
+   "level": "B1",
+   "title": "Präteritum: regelmäßige und unregelmäßige Verben",
+   "url": "b1.html#b1-praeteritum"
+  },
+  {
+   "id": "b1-plusquamperfekt",
+   "level": "B1",
+   "title": "Plusquamperfekt",
+   "url": "b1.html#b1-plusquamperfekt"
+  },
+  {
+   "id": "b1-nebensatz-wenn-als-ob",
+   "level": "B1",
+   "title": "wenn, als, ob",
+   "url": "b1.html#b1-nebensatz-wenn-als-ob"
+  },
+  {
+   "id": "b1-relativsaetze",
+   "level": "B1",
+   "title": "Relativsätze",
+   "url": "b1.html#b1-relativsaetze"
+  },
+  {
+   "id": "b1-infinitiv-mit-zu",
+   "level": "B1",
+   "title": "Infinitiv mit zu",
+   "url": "b1.html#b1-infinitiv-mit-zu"
+  },
+  {
+   "id": "b1-passiv-praesens",
+   "level": "B1",
+   "title": "Passiv Präsens und Präteritum",
+   "url": "b1.html#b1-passiv-praesens"
+  },
+  {
+   "id": "b1-konjunktiv-ii-wuensche",
+   "level": "B1",
+   "title": "Konjunktiv II: Wünsche und höfliche Bitten",
+   "url": "b1.html#b1-konjunktiv-ii-wuensche"
+  },
+  {
+   "id": "b1-verben-mit-praepositionen",
+   "level": "B1",
+   "title": "Verben mit festen Präpositionen",
+   "url": "b1.html#b1-verben-mit-praepositionen"
+  },
+  {
+   "id": "b1-pronominaladverbien",
+   "level": "B1",
+   "title": "Pronominaladverbien: darauf, worauf, …",
+   "url": "b1.html#b1-pronominaladverbien"
+  },
+  {
+   "id": "b1-temporale-konjunktionen",
+   "level": "B1",
+   "title": "Temporale Nebensätze: während, bevor, nachdem, seit",
+   "url": "b1.html#b1-temporale-konjunktionen"
+  },
+  {
+   "id": "b1-genitiv",
+   "level": "B1",
+   "title": "Genitiv und Genitivpräpositionen",
+   "url": "b1.html#b1-genitiv"
+  },
+  {
+   "id": "b1-indirekte-fragen",
+   "level": "B1",
+   "title": "Indirekte Fragen",
+   "url": "b1.html#b1-indirekte-fragen"
+  },
+  {
+   "id": "b2-passiv-erweitert",
+   "level": "B2",
+   "title": "Passiv: Perfekt, Modalverben und Zustandspassiv",
+   "url": "b2.html#b2-passiv-erweitert"
+  },
+  {
+   "id": "b2-konjunktiv-ii-vergangenheit",
+   "level": "B2",
+   "title": "Konjunktiv II der Vergangenheit",
+   "url": "b2.html#b2-konjunktiv-ii-vergangenheit"
+  },
+  {
+   "id": "b2-konjunktiv-i-indirekte-rede",
+   "level": "B2",
+   "title": "Konjunktiv I und indirekte Rede",
+   "url": "b2.html#b2-konjunktiv-i-indirekte-rede"
+  },
+  {
+   "id": "b2-konnektoren",
+   "level": "B2",
+   "title": "Konnektoren: obwohl, trotzdem, deshalb, dennoch",
+   "url": "b2.html#b2-konnektoren"
+  },
+  {
+   "id": "b2-doppelkonjunktionen",
+   "level": "B2",
+   "title": "Zweiteilige Konjunktionen",
+   "url": "b2.html#b2-doppelkonjunktionen"
+  },
+  {
+   "id": "b2-relativsaetze-mit-praepositionen",
+   "level": "B2",
+   "title": "Relativsätze mit Präpositionen, was und wo",
+   "url": "b2.html#b2-relativsaetze-mit-praepositionen"
+  },
+  {
+   "id": "b2-subjektive-modalverben",
+   "level": "B2",
+   "title": "Subjektiver Gebrauch der Modalverben",
+   "url": "b2.html#b2-subjektive-modalverben"
+  },
+  {
+   "id": "b2-finalsaetze",
+   "level": "B2",
+   "title": "Finalsätze: damit und um … zu",
+   "url": "b2.html#b2-finalsaetze"
+  },
+  {
+   "id": "b2-partizipialattribute",
+   "level": "B2",
+   "title": "Partizip I und II als Adjektiv",
+   "url": "b2.html#b2-partizipialattribute"
+  },
+  {
+   "id": "b2-nominalisierung",
+   "level": "B2",
+   "title": "Nominalisierung: Verb → Nomen",
+   "url": "b2.html#b2-nominalisierung"
+  },
+  {
+   "id": "b2-wortstellung-mittelfeld",
+   "level": "B2",
+   "title": "Wortstellung im Mittelfeld (temporal – kausal – modal – lokal)",
+   "url": "b2.html#b2-wortstellung-mittelfeld"
+  },
+  {
+   "id": "b2-adjektive-mit-praepositionen",
+   "level": "B2",
+   "title": "Adjektive mit Präpositionen",
+   "url": "b2.html#b2-adjektive-mit-praepositionen"
+  },
+  {
+   "id": "c1-erweitertes-partizipialattribut",
+   "level": "C1",
+   "title": "Erweitertes Partizipialattribut",
+   "url": "c1.html#c1-erweitertes-partizipialattribut"
+  },
+  {
+   "id": "c1-nominalstil-funktionsverbgefuege",
+   "level": "C1",
+   "title": "Nominalstil und Funktionsverbgefüge",
+   "url": "c1.html#c1-nominalstil-funktionsverbgefuege"
+  },
+  {
+   "id": "c1-irreale-vergleiche",
+   "level": "C1",
+   "title": "Irreale Vergleiche: als ob, als wenn",
+   "url": "c1.html#c1-irreale-vergleiche"
+  },
+  {
+   "id": "c1-passiversatzformen",
+   "level": "C1",
+   "title": "Passiversatzformen",
+   "url": "c1.html#c1-passiversatzformen"
+  },
+  {
+   "id": "c1-gehobene-konnektoren",
+   "level": "C1",
+   "title": "Gehobene Konnektoren: indem, sodass, zumal, insofern",
+   "url": "c1.html#c1-gehobene-konnektoren"
+  },
+  {
+   "id": "c1-verben-mit-modaler-bedeutung",
+   "level": "C1",
+   "title": "Verben mit modaler Bedeutung: scheinen, drohen, pflegen, vermögen",
+   "url": "c1.html#c1-verben-mit-modaler-bedeutung"
+  },
+  {
+   "id": "c1-weiterfuehrende-relativsaetze",
+   "level": "C1",
+   "title": "Weiterführende Relativsätze (was, wo(r)-)",
+   "url": "c1.html#c1-weiterfuehrende-relativsaetze"
+  },
+  {
+   "id": "c1-praepositionen-genitiv-gehoben",
+   "level": "C1",
+   "title": "Präpositionen des gehobenen Stils (aufgrund, infolge, angesichts, …)",
+   "url": "c1.html#c1-praepositionen-genitiv-gehoben"
+  },
+  {
+   "id": "c1-satzstellung-hervorhebung",
+   "level": "C1",
+   "title": "Hervorhebung durch Satzstellung",
+   "url": "c1.html#c1-satzstellung-hervorhebung"
+  },
+  {
+   "id": "c1-konjunktiv-i-ii-wiedergabe",
+   "level": "C1",
+   "title": "Indirekte Rede im Text: Konjunktiv I und Ersatzformen",
+   "url": "c1.html#c1-konjunktiv-i-ii-wiedergabe"
+  }
+ ]
+}

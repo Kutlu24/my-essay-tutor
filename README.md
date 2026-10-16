@@ -109,3 +109,7 @@ service's Environment tab (marked `sync: false` so they aren't committed).
 ## LanguageTool cross-check (optional)
 
 With `ENABLE_GRAMMAR_CROSSCHECK=true` an independent rule-based pass (LanguageTool) runs next to the AI grading. Findings that the AI list does not already contain appear under "Further hints" (only those with a suggested fix, max 8; `grammar_crosscheck_extra` in the API). A LanguageTool outage or rate limit (the free public API limits requests) never fails a grading, the hint list is simply omitted. Note that the public API receives the essay text; for private essays use the local-server mode on a host with enough RAM.
+
+## Links to DeutschGrammatikMeister
+
+For German essays every grammar error can carry the id of the matching rule on the separate [DeutschGrammatikMeister](https://github.com/Kutlu24/deutsch-grammatik-meister) site (A1–C1 rule pages). The rule catalog is `src/my_essay_tutor/grammar_rules.json`, a copy of that site's `regeln.json`; refresh it with `cp ../deutsch-grammatik-meister/regeln.json src/my_essay_tutor/grammar_rules.json`. Ids the model invents are dropped (`rules.py`), so a link always points to an existing rule. Set `GRAMMAR_SITE_URL` if the grammar site is hosted elsewhere than the default in the catalog.

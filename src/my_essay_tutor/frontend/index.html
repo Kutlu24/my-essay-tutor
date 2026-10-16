@@ -26,16 +26,24 @@
     --font-mono: "IBM Plex Mono", monospace;
   }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
   body {
     margin: 0;
+    min-height: 100dvh;
     background: var(--paper);
     background-image: radial-gradient(900px 420px at 50% -8%, rgba(138,51,36,0.06), transparent 60%);
     color: var(--ink);
     font-family: var(--font-body);
     line-height: 1.55;
+    overflow-x: clip;
   }
-  .wrap { max-width: 880px; margin: 0 auto; padding: clamp(24px, 6vw, 48px) clamp(14px, 4vw, 32px) clamp(48px, 10vw, 90px); }
-  header { text-align: center; margin-bottom: 40px; }
+  .wrap {
+    max-width: min(1080px, 94vw); margin: 0 auto;
+    padding: clamp(24px, 6vw, 48px) clamp(14px, 4vw, 32px) clamp(28px, 6vw, 56px);
+    min-height: 100dvh; display: flex; flex-direction: column;
+  }
+  .wrap > .card, .wrap > .steps { flex: 0 0 auto; }
+  header { text-align: center; margin-bottom: 40px; flex: 0 0 auto; }
   .kicker {
     display: inline-flex; align-items: center; gap: 8px;
     font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em;
@@ -46,10 +54,10 @@
   }
   h1 {
     font-family: var(--font-display); font-weight: 700;
-    font-size: clamp(2.1rem, 5.5vw, 2.9rem); margin: 0 0 12px; letter-spacing: -0.01em;
+    font-size: clamp(2.1rem, 5.5vw, 3.3rem); margin: 0 0 12px; letter-spacing: -0.01em;
     text-wrap: balance;
   }
-  .subtitle { color: var(--ink-soft); font-size: 1.02rem; max-width: 560px; margin: 0 auto; }
+  .subtitle { color: var(--ink-soft); font-size: 1.06rem; max-width: 720px; margin: 0 auto; }
 
   .steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 28px 0 36px; font-family: var(--font-mono); font-size: 0.72rem; }
   .step-pill {
@@ -161,18 +169,11 @@
   .criterion-bar-track { height: 6px; border-radius: 999px; background: var(--accent-soft); overflow: hidden; margin-bottom: 8px; }
   .criterion-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
   .criterion-card .comment { font-size: 0.85rem; color: var(--ink-soft); }
-  @media (max-width: 640px) {
-    .wrap { padding: 32px 16px 60px; }
-    .card { padding: 22px; }
-    .result-head { flex-wrap: wrap; }
-  }
-  @media (max-width: 520px) { .criteria-grid { grid-template-columns: 1fr; } }
 
   .sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
   .sw-grid h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; color: var(--ink-soft); }
   .sw-grid ul { margin: 0; padding-left: 18px; font-size: 0.9rem; }
   .sw-grid li { margin-bottom: 4px; }
-  @media (max-width: 520px) { .sw-grid { grid-template-columns: 1fr; } }
 
   .errors-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 0 0 12px; }
   .grammar-item {
@@ -186,7 +187,7 @@
   .grammar-item .explanation { color: var(--ink-soft); font-size: 0.86rem; }
   .no-errors { color: var(--good); font-size: 0.95rem; padding: 8px 0; }
 
-  footer { text-align: center; margin-top: 48px; color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.72rem; }
+  footer { text-align: center; margin-top: auto; flex: 0 0 auto; padding-top: 36px; color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.72rem; }
 
   textarea#typed-text {
     width: 100%; min-height: 260px; font-family: var(--font-body); font-size: 1rem;
@@ -209,7 +210,7 @@
   .exam-score .adj { color: var(--warn); font-size: 0.85rem; margin: 10px 0 0; }
   .exam-score .fine { color: var(--ink-faint); font-size: 0.8rem; margin: 10px 0 0; }
 
-  /* ---- responsive: nothing may force horizontal scrolling */
+  /* ---- responsive: nothing may force horizontal scrolling ---- */
   html { -webkit-text-size-adjust: 100%; }
   img, svg { max-width: 100%; }
   textarea { max-width: 100%; }
@@ -219,7 +220,14 @@
   .exam-score table { table-layout: fixed; }
   .exam-score td:first-child { overflow-wrap: anywhere; padding-right: 8px; }
   .pill-btn { max-width: 100%; text-align: left; }
-  @media (max-width: 640px) {
+  /* keep the last row of controls clear of the floating module switcher */
+  .wrap { padding-bottom: calc(clamp(28px, 6vw, 56px) + 44px); }
+  @media (max-width: 759px) {
+    .wrap { padding-bottom: calc(clamp(28px, 6vw, 56px) + 64px); }
+    header { margin-bottom: 26px; }
+    .steps { margin: 20px 0 26px; }
+    .s1-grid, .res-grid { display: block; }
+    .s1-right, .res-right { margin-top: 22px; }
     .dropzone { padding: 26px 14px; }
     .pill-row { gap: 6px; }
     .btn-row .btn { flex: 1 1 auto; text-align: center; }
@@ -227,16 +235,30 @@
     .exam-score td.band { width: 30%; font-size: 0.78rem; }
     .exam-score td.pts { width: 24%; font-size: 0.82rem; }
     .score-ring { width: 78px; height: 78px; }
+    .criteria-grid, .sw-grid { grid-template-columns: 1fr; }
+    textarea#typed-text, textarea#extracted-text { min-height: clamp(200px, 34vh, 320px); }
   }
-  @media (max-width: 420px) {
+  @media (max-width: 640px) {
+    .wrap { padding: 28px 14px calc(28px + 64px); }
+    .card { padding: 20px; }
+    .result-head { flex-wrap: wrap; gap: 14px; }
+    .btn-row { gap: 8px; }
+    .btn-row .btn { flex: 1 1 calc(50% - 8px); }
+  }
+  @media (max-width: 480px) {
     .lang-btn { flex: 1 1 100%; justify-content: flex-start; }
     .pill-btn { padding: 9px 12px; font-size: 0.9rem; }
     .step-pill { font-size: 0.66rem; padding: 4px 9px; }
     .sw-grid, .criteria-grid { gap: 10px; }
+    .btn-row .btn { flex: 1 1 100%; }
+    .score-ring { width: 68px; height: 68px; border-width: 5px; }
+    .score-ring .num { font-size: 1.45rem; }
+    h1 { font-size: clamp(1.75rem, 8vw, 2.1rem); }
+    .subtitle { font-size: 0.95rem; }
   }
 
-  /* ---- wide screens: two columns and a compact header so a step fits one screen */
-  @media (min-width: 920px) {
+  /* ---- wide screens: two columns and a compact header so a step fits one screen ---- */
+  @media (min-width: 760px) {
     .wrap { max-width: 1140px; padding-top: 22px; padding-bottom: 36px; }
     header { margin-bottom: 14px; }
     .kicker { margin-bottom: 8px; }
@@ -245,18 +267,33 @@
     .steps { margin: 14px 0 16px; }
     .card { padding: 24px 30px; }
     .card h2 { margin-bottom: 4px; }
-    .s1-grid, .res-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 34px; align-items: start; }
-    .s1-right, .res-right { border-left: 1px solid var(--line); padding-left: 34px; }
+    .s1-grid, .res-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      gap: clamp(20px, 3vw, 34px);
+      align-items: stretch;
+    }
+    .s1-left { display: flex; flex-direction: column; }
+    #upload-panel, #write-panel { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    #write-panel .hint, #upload-panel .hint { flex: 0 0 auto; }
+    #write-panel textarea#typed-text { flex: 1 1 auto; min-height: clamp(180px, 28vh, 340px); }
+    #upload-panel .dropzone {
+      flex: 1 1 auto; min-height: 150px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .s1-right { display: flex; flex-direction: column; }
+    .s1-settings { flex: 1 1 auto; }
+    .s1-right, .res-right { border-left: 1px solid var(--line); padding-left: clamp(20px, 3vw, 34px); }
     .dropzone { padding: 30px 16px; }
     .pill-row { margin-bottom: 14px; }
     .hint { margin-bottom: 14px; }
     .btn-row { margin-top: 10px; }
     .s1-right .btn-row { margin-top: 18px; }
-    textarea#typed-text { min-height: clamp(150px, 30vh, 260px); }
-    textarea#extracted-text { min-height: 46vh; }
+    textarea#extracted-text { min-height: clamp(320px, 52vh, 560px); }
     .feedback-block { margin-bottom: 18px; }
     .result-head { margin-bottom: 18px; }
-    .criteria-grid { gap: 8px; margin-bottom: 14px; }
+    .criteria-grid { gap: 8px; margin-bottom: 14px; grid-template-columns: 1fr; }
+    .sw-grid { grid-template-columns: 1fr; gap: 14px; }
     .criterion-card { padding: 9px 12px; }
     .criterion-card .row { margin-bottom: 5px; }
     .criterion-card .comment { font-size: 0.8rem; line-height: 1.4; }
@@ -265,11 +302,34 @@
     .exam-score td { padding: 4px 0; }
     .errors-title { margin-bottom: 8px; }
     .sw-grid { margin-bottom: 0; }
-    .footer-fine, footer { margin-top: 20px; }
+    .footer-fine, footer { margin-top: auto; padding-top: 28px; }
+    /* the visible card stretches into the free viewport space instead of leaving a void */
+    .wrap > .card { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    .wrap > .card > * { flex: 0 0 auto; }
+    .wrap > .card > .s1-grid,
+    .wrap > .card > .res-grid { flex: 1 1 auto; min-height: 0; }
+    .wrap > .card > textarea#extracted-text { flex: 1 1 auto; min-height: clamp(260px, 44vh, 560px); }
   }
-  @media (min-width: 920px) and (max-height: 780px) {
+  @media (min-width: 760px) and (max-height: 760px) {
     .subtitle, .kicker { display: none; }
     .steps { margin-top: 6px; }
+    header { margin-bottom: 8px; }
+    h1 { font-size: 1.75rem; }
+    .steps { margin-bottom: 10px; }
+  }
+  @media (min-width: 1440px) {
+    .wrap { max-width: min(1320px, 92vw); }
+    .criteria-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1040px) {
+    .criteria-grid, .sw-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sw-grid { gap: 16px; }
+  }
+  @media (min-width: 760px) and (max-width: 1040px) {
+    /* two columns, but keep the control pills readable on a narrow tablet */
+    .lang-btn { padding: 10px 14px 10px 12px; }
+    .lang-btn .flag { width: 28px; height: 19px; }
+    .card { padding: 20px 22px; }
   }
 
   /* ---- large writing window */
@@ -279,7 +339,8 @@
   textarea#typed-text { cursor: text; }
   dialog#editor-dialog {
     border: 0; padding: 0; border-radius: 16px; color: var(--ink); background: var(--paper-raised);
-    width: min(1000px, 94vw); height: min(88vh, 820px); max-width: none; max-height: none;
+    width: min(1000px, 100% - 32px); height: min(88vh, 820px);
+    max-width: 100%; max-height: 100dvh; margin: auto; overflow: hidden;
     box-shadow: 0 24px 80px rgba(31,43,77,0.35);
   }
   dialog#editor-dialog::backdrop { background: rgba(31,43,77,0.55); }
@@ -297,18 +358,24 @@
   #editor-text:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .editor-actions { margin-top: 0; justify-content: flex-end; }
   @media (max-width: 640px) {
-    dialog#editor-dialog { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+    dialog#editor-dialog {
+      width: 100%; height: 100dvh; max-width: 100%; max-height: 100dvh;
+      margin: 0; inset: 0; border-radius: 0;
+    }
+    .editor { padding-bottom: max(clamp(14px, 3vw, 26px), env(safe-area-inset-bottom)); }
     .editor-actions .btn { flex: 1 1 auto; }
   }
 
   [hidden] { display: none !important; }
+.rule-link { display: inline-block; margin-top: 6px; font-size: 0.9em; font-weight: 600; color: #5b3df5; text-decoration: none; }
+  .rule-link:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <span class="kicker">A1 &rarr; C1 &middot; telc &middot; Goethe &middot; DELF/DALF &middot; DE / EN / FR</span>
-    <h1>My Essay Tutor</h1>
+    <span class="kicker" id="app-kicker">A1 &rarr; C1 &middot; telc &middot; Goethe &middot; DELF/DALF &middot; DE / EN / FR</span>
+    <h1 id="app-title">My Essay Tutor</h1>
     <p class="subtitle" data-i18n="subtitle">Upload a composition as a photo or PDF, or write it right here. It's checked for grammar and scored against the exam and level you pick.</p>
   </header>
 
@@ -442,6 +509,10 @@
 
     <p class="errors-title" data-i18n="grammarTitle">Grammar &amp; spelling</p>
     <div id="grammar-list"></div>
+    <div id="grammar-extra" hidden>
+      <p class="errors-title" data-i18n="extraTitle">Further hints (LanguageTool)</p>
+      <div id="grammar-extra-list"></div>
+    </div>
     </div></div>
 
     <div class="btn-row">
@@ -471,6 +542,8 @@
 
 <script>
 (function () {
+  // Mounted at /ui/ (standalone) or /<mount>/ui/ (embedded in the German Trainer platform): keep API calls under the mount.
+  const API = location.pathname.replace(/\/ui(\/.*)?$/, '');
   const state = { ui: 'en', lastResult: null, mode: 'upload', file: null, lang: null, exam: null, level: null, task: null, catalog: null };
 
   const CRITERIA_LABELS = {
@@ -505,7 +578,7 @@
       spinGrading: 'Grading…',
       target: 'Target:', below: 'below target', at: 'at target', above: 'above target',
       critTitle: 'Criteria (12 pts each)', strengths: 'Strengths', weaknesses: 'Areas to work on',
-      grammarTitle: 'Grammar & spelling', noErrors: 'No grammar or spelling errors found.',
+      grammarTitle: 'Grammar & spelling', extraTitle: 'Further hints (LanguageTool)', ruleLink: 'Rule', noErrors: 'No grammar or spelling errors found.',
       btnRestart: 'Grade another composition',
       estimate: "Estimate from the official criteria, not an examiner's mark.",
       word: 'word', words: 'words', expected: 'expected',
@@ -536,7 +609,7 @@
       spinGrading: 'Wird bewertet …',
       target: 'Ziel:', below: 'unter dem Ziel', at: 'auf Zielniveau', above: 'über dem Ziel',
       critTitle: 'Kriterien (je 12 Punkte)', strengths: 'Stärken', weaknesses: 'Woran Sie arbeiten können',
-      grammarTitle: 'Grammatik & Rechtschreibung', noErrors: 'Keine Grammatik- oder Rechtschreibfehler gefunden.',
+      grammarTitle: 'Grammatik & Rechtschreibung', extraTitle: 'Weitere Hinweise (LanguageTool)', ruleLink: 'Regel nachlesen', noErrors: 'Keine Grammatik- oder Rechtschreibfehler gefunden.',
       btnRestart: 'Weiteren Text bewerten',
       estimate: 'Schätzung nach den offiziellen Kriterien, keine Note einer Prüferin oder eines Prüfers.',
       word: 'Wort', words: 'Wörter', expected: 'erwartet',
@@ -567,7 +640,7 @@
       spinGrading: 'Évaluation en cours…',
       target: 'Objectif :', below: 'sous le niveau visé', at: 'au niveau visé', above: 'au-dessus du niveau visé',
       critTitle: 'Critères (12 points chacun)', strengths: 'Points forts', weaknesses: 'Points à travailler',
-      grammarTitle: 'Grammaire et orthographe', noErrors: "Aucune erreur de grammaire ou d'orthographe trouvée.",
+      grammarTitle: 'Grammaire et orthographe', extraTitle: 'Autres remarques (LanguageTool)', ruleLink: 'Règle', noErrors: "Aucune erreur de grammaire ou d'orthographe trouvée.",
       btnRestart: 'Évaluer une autre rédaction',
       estimate: "Estimation d'après les critères officiels, pas la note d'un examinateur.",
       word: 'mot', words: 'mots', expected: 'attendu',
@@ -655,7 +728,7 @@
 
   function applyUi() {
     document.documentElement.lang = state.ui;
-    document.title = tr('pageTitle');
+    document.title = state.title || tr('pageTitle');
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = tr(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = tr(el.dataset.i18nPh); });
     document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', tr(el.dataset.i18nAria)); });
@@ -755,7 +828,26 @@
     });
   });
 
-  fetch('/api/exams').then(r => r.json()).then(c => { state.catalog = c; renderPickers(); })
+  // Deployment settings (languages offered, name shown) + exam catalog.
+  Promise.all([
+    fetch(API + '/api/config').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(API + '/api/exams').then(r => r.json())
+  ]).then(([cfg, c]) => {
+      state.catalog = c;
+      if (cfg) {
+        $('app-title').textContent = cfg.title;
+        $('app-kicker').textContent = cfg.kicker;
+        if (cfg.title !== 'My Essay Tutor') { state.title = cfg.title; document.title = cfg.title; }
+        document.querySelectorAll('#lang-row .lang-btn').forEach(b => { b.hidden = !cfg.languages.includes(b.dataset.lang); });
+        if (cfg.languages.length === 1) {  // single-language deployment: no language choice to make
+          $('lang-row').hidden = true;
+          $('lang-row').previousElementSibling.hidden = true;
+          const only = document.querySelector('#lang-row .lang-btn[data-lang="' + cfg.languages[0] + '"]');
+          if (only) only.click();
+        }
+      }
+      renderPickers();
+    })
     .catch(() => {
       error1.textContent = tr('errExams');
       error1.classList.add('visible');
@@ -782,7 +874,7 @@
     try {
       const form = new FormData();
       form.append('file', state.file);
-      const res = await fetch('/api/extract', { method: 'POST', body: form });
+      const res = await fetch(API + '/api/extract', { method: 'POST', body: form });
       if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
       const data = await res.json();
       $('extracted-text').value = data.extracted_text;
@@ -845,7 +937,7 @@
   const btnGrade = $('btn-grade'), spinnerGrade = $('spinner-grade'), error2 = $('error-2');
 
   async function postGrade(text) {
-    const res = await fetch('/api/grade', {
+    const res = await fetch(API + '/api/grade', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1017,9 +1109,45 @@
         expl.className = 'explanation';
         expl.textContent = err.explanation;
         item.append(cat, diff, expl);
+        if (err.rule_url) {
+          const link = document.createElement('a');
+          link.className = 'rule-link';
+          link.href = err.rule_url;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = tr('ruleLink') + ': ' + err.rule_title + ' (' + err.rule_level + ') →';
+          item.appendChild(link);
+        }
         list.appendChild(item);
       });
     }
+
+    // Independent rule-based hints (LanguageTool) that the AI list above does not already contain.
+    const extraBox = $('grammar-extra'), extraList = $('grammar-extra-list');
+    extraList.innerHTML = '';
+    const extra = r.grammar_crosscheck_extra || [];
+    extraBox.hidden = extra.length === 0;
+    extra.forEach(m => {
+      const item = document.createElement('div');
+      item.className = 'grammar-item';
+      const diff = document.createElement('div');
+      diff.className = 'diff';
+      const orig = document.createElement('span');
+      orig.className = 'orig';
+      orig.textContent = m.span;
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '→';
+      const corr = document.createElement('span');
+      corr.className = 'corr';
+      corr.textContent = (m.replacements || []).join(' / ');
+      diff.append(orig, arrow, corr);
+      const expl = document.createElement('div');
+      expl.className = 'explanation';
+      expl.textContent = m.message;
+      item.append(diff, expl);
+      extraList.appendChild(item);
+    });
   }
 
   $('btn-restart').addEventListener('click', () => {

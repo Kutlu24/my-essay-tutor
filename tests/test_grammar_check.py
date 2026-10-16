@@ -68,3 +68,19 @@ def test_both_flags_on_uses_local_server_not_public_api(monkeypatch):
         grammar_crosscheck("Some text.", "en")
         mock_local.assert_called_once_with("en-US")
         mock_public.assert_not_called()
+
+
+def test_extra_matches_drops_what_the_llm_already_reported():
+    from my_essay_tutor.grammar_check import extra_matches
+    from my_essay_tutor.models import GrammarError
+
+    text = "Ich habe gestern ein Buch gelesen und dem Mann geholfen."
+    llm = [GrammarError(original="dem Mann", correction="dem Mann", explanation="x", category="case")]
+    matches = [
+        {"message": "m1", "offset": text.index("dem Mann"), "length": 8, "replacements": ["den Mann"], "rule_id": "A"},
+        {"message": "m2", "offset": text.index("gestern"), "length": 7, "replacements": ["vorgestern"], "rule_id": "B"},
+        {"message": "m3", "offset": 0, "length": 3, "replacements": [], "rule_id": "C"},
+    ]
+    out = extra_matches(matches, llm, text)
+    assert [m["rule_id"] for m in out] == ["B"] and out[0]["span"] == "gestern"
+    assert extra_matches(None, llm, text) is None

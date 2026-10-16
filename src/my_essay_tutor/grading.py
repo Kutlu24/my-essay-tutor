@@ -8,6 +8,7 @@ unlike the Gemini free tier.
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import Literal
 
@@ -15,7 +16,7 @@ from pydantic import BaseModel
 
 from . import exams
 from .config import get_settings
-from .grammar_check import grammar_crosscheck
+from .grammar_check import extra_matches, grammar_crosscheck
 from .models import CriteriaScores, GradingResult, GrammarError
 
 
@@ -340,6 +341,11 @@ def grade_essay(text: str, language_code: str, target_level: str, exam: str | No
         if task_obj is not None else None
     )
 
+    try:
+        crosscheck = grammar_crosscheck(text, language_code)
+    except Exception as exc:  # public-API rate limit / network: the optional hint list must never fail a grading
+        logging.getLogger(__name__).warning("grammar cross-check skipped: %s: %s", type(exc).__name__, exc)
+        crosscheck = None
     return GradingResult(
         language=language_code,
         target_level=target_level,
@@ -356,5 +362,6 @@ def grade_essay(text: str, language_code: str, target_level: str, exam: str | No
         exam=exam_obj.id,
         task=task_obj.id if task_obj else None,
         exam_score=exam_score,
-        grammar_crosscheck=grammar_crosscheck(text, language_code),
+        grammar_crosscheck=crosscheck,
+        grammar_crosscheck_extra=extra_matches(crosscheck, data.grammar_errors, text),
     )

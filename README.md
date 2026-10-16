@@ -105,3 +105,7 @@ service's Environment tab (marked `sync: false` so they aren't committed).
   "review transcription" step before grading for exactly this reason.
 - Typed/printed compositions (scanned or exported PDF) generally transcribe more
   reliably than handwriting.
+
+## LanguageTool cross-check (optional)
+
+With `ENABLE_GRAMMAR_CROSSCHECK=true` an independent rule-based pass (LanguageTool) runs next to the AI grading. Findings that the AI list does not already contain appear under "Further hints" (only those with a suggested fix, max 8; `grammar_crosscheck_extra` in the API). A LanguageTool outage or rate limit (the free public API limits requests) never fails a grading, the hint list is simply omitted. Note that the public API receives the essay text; for private essays use the local-server mode on a host with enough RAM.

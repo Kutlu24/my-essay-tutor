@@ -75,3 +75,6 @@ class GradingResult(BaseModel):
     # grammar_check.py. Not reconciled against grammar_errors above; the
     # two lists are shown side by side, not merged.
     grammar_crosscheck: list[dict] | None = None
+    # The subset of grammar_crosscheck the LLM did not already report (grammar_check.extra_matches);
+    # shown in the UI as "further hints". None while the cross-check is off.
+    grammar_crosscheck_extra: list[dict] | None = None

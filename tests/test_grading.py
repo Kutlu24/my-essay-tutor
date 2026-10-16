@@ -59,3 +59,25 @@ def test_rejects_missing_field():
     del payload["overall_feedback"]
     with pytest.raises(ValidationError):
         _GradingResponse.model_validate(payload)
+
+
+def test_grading_survives_crosscheck_failure_and_exposes_extra(monkeypatch):
+    """A LanguageTool outage / rate limit must not fail the grading; working matches are
+    reconciled against the LLM's own error list."""
+    from my_essay_tutor import grading
+
+    data = _GradingResponse.model_validate(_payload())
+    monkeypatch.setattr(grading, "_CALLERS", {grading.get_settings().grading_provider: lambda p, t: data})
+    text = "Er gehen nach Hause. " * 5
+
+    def boom(*a):
+        raise RuntimeError("rate limit")
+
+    monkeypatch.setattr(grading, "grammar_crosscheck", boom)
+    out = grading.grade_essay(text, "de", "B1")
+    assert out.grammar_crosscheck is None and out.grammar_crosscheck_extra is None
+
+    match = {"message": "Verb", "offset": 3, "length": 5, "replacements": ["geht"], "rule_id": "X"}
+    monkeypatch.setattr(grading, "grammar_crosscheck", lambda *a: [match])
+    out = grading.grade_essay(text, "de", "B1")
+    assert out.grammar_crosscheck_extra[0]["span"] == "gehen"

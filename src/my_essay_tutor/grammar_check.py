@@ -72,3 +72,22 @@ def grammar_crosscheck(text: str, language_code: str) -> list[dict] | None:
         }
         for m in matches
     ]
+
+
+def extra_matches(matches: list[dict] | None, llm_errors, text: str, limit: int = 8) -> list[dict] | None:
+    """LanguageTool findings the LLM did NOT already report: a match is dropped when the flagged
+    span overlaps the text of any LLM `original` (either one containing the other, ignoring case).
+    None in, None out (cross-check off). Only matches that come with a suggested replacement are
+    kept - they are the actionable ones; the rest is mostly style/typography noise."""
+    if matches is None:
+        return None
+    seen = [e.original.strip().lower() for e in llm_errors if e.original.strip()]
+    extra = []
+    for m in matches:
+        if not m.get("replacements"):
+            continue
+        span = text[m["offset"]:m["offset"] + m["length"]].strip().lower()
+        if not span or any(span in o or o in span for o in seen):
+            continue
+        extra.append({**m, "span": text[m["offset"]:m["offset"] + m["length"]]})
+    return extra[:limit]

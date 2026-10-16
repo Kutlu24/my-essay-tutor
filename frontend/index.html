@@ -442,6 +442,10 @@
 
     <p class="errors-title" data-i18n="grammarTitle">Grammar &amp; spelling</p>
     <div id="grammar-list"></div>
+    <div id="grammar-extra" hidden>
+      <p class="errors-title" data-i18n="extraTitle">Further hints (LanguageTool)</p>
+      <div id="grammar-extra-list"></div>
+    </div>
     </div></div>
 
     <div class="btn-row">
@@ -505,7 +509,7 @@
       spinGrading: 'Grading…',
       target: 'Target:', below: 'below target', at: 'at target', above: 'above target',
       critTitle: 'Criteria (12 pts each)', strengths: 'Strengths', weaknesses: 'Areas to work on',
-      grammarTitle: 'Grammar & spelling', noErrors: 'No grammar or spelling errors found.',
+      grammarTitle: 'Grammar & spelling', extraTitle: 'Further hints (LanguageTool)', noErrors: 'No grammar or spelling errors found.',
       btnRestart: 'Grade another composition',
       estimate: "Estimate from the official criteria, not an examiner's mark.",
       word: 'word', words: 'words', expected: 'expected',
@@ -536,7 +540,7 @@
       spinGrading: 'Wird bewertet …',
       target: 'Ziel:', below: 'unter dem Ziel', at: 'auf Zielniveau', above: 'über dem Ziel',
       critTitle: 'Kriterien (je 12 Punkte)', strengths: 'Stärken', weaknesses: 'Woran Sie arbeiten können',
-      grammarTitle: 'Grammatik & Rechtschreibung', noErrors: 'Keine Grammatik- oder Rechtschreibfehler gefunden.',
+      grammarTitle: 'Grammatik & Rechtschreibung', extraTitle: 'Weitere Hinweise (LanguageTool)', noErrors: 'Keine Grammatik- oder Rechtschreibfehler gefunden.',
       btnRestart: 'Weiteren Text bewerten',
       estimate: 'Schätzung nach den offiziellen Kriterien, keine Note einer Prüferin oder eines Prüfers.',
       word: 'Wort', words: 'Wörter', expected: 'erwartet',
@@ -567,7 +571,7 @@
       spinGrading: 'Évaluation en cours…',
       target: 'Objectif :', below: 'sous le niveau visé', at: 'au niveau visé', above: 'au-dessus du niveau visé',
       critTitle: 'Critères (12 points chacun)', strengths: 'Points forts', weaknesses: 'Points à travailler',
-      grammarTitle: 'Grammaire et orthographe', noErrors: "Aucune erreur de grammaire ou d'orthographe trouvée.",
+      grammarTitle: 'Grammaire et orthographe', extraTitle: 'Autres remarques (LanguageTool)', noErrors: "Aucune erreur de grammaire ou d'orthographe trouvée.",
       btnRestart: 'Évaluer une autre rédaction',
       estimate: "Estimation d'après les critères officiels, pas la note d'un examinateur.",
       word: 'mot', words: 'mots', expected: 'attendu',
@@ -1020,6 +1024,33 @@
         list.appendChild(item);
       });
     }
+
+    // Independent rule-based hints (LanguageTool) that the AI list above does not already contain.
+    const extraBox = $('grammar-extra'), extraList = $('grammar-extra-list');
+    extraList.innerHTML = '';
+    const extra = r.grammar_crosscheck_extra || [];
+    extraBox.hidden = extra.length === 0;
+    extra.forEach(m => {
+      const item = document.createElement('div');
+      item.className = 'grammar-item';
+      const diff = document.createElement('div');
+      diff.className = 'diff';
+      const orig = document.createElement('span');
+      orig.className = 'orig';
+      orig.textContent = m.span;
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '→';
+      const corr = document.createElement('span');
+      corr.className = 'corr';
+      corr.textContent = (m.replacements || []).join(' / ');
+      diff.append(orig, arrow, corr);
+      const expl = document.createElement('div');
+      expl.className = 'explanation';
+      expl.textContent = m.message;
+      item.append(diff, expl);
+      extraList.appendChild(item);
+    });
   }
 
   $('btn-restart').addEventListener('click', () => {

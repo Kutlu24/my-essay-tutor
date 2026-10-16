@@ -25,6 +25,18 @@ class Settings(BaseSettings):
 
     max_upload_mb: int = 10
 
+    # Which essay languages this deployment accepts, and how it presents itself. The standalone
+    # site checks German, English and French; the German Trainer platform embeds the same code as
+    # "Schreibwerkstatt" with ALLOWED_LANGUAGES=de (see german-trainer-platform).
+    allowed_languages: str = "de,en,fr"
+    app_title: str = "My Essay Tutor"
+    app_kicker: str = ""  # empty = built from the allowed languages
+
+    @property
+    def language_list(self) -> list[str]:
+        langs = [x.strip() for x in self.allowed_languages.split(",") if x.strip() in ("de", "en", "fr")]
+        return langs or ["de", "en", "fr"]
+
     # Base URL of the DeutschGrammatikMeister site that grammar errors link to (empty = the default
     # in grammar_rules.json). Set GRAMMAR_SITE_URL if it is hosted somewhere else.
     grammar_site_url: str = ""

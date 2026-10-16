@@ -110,10 +110,19 @@ async def extract(file: UploadFile = File(...)) -> ExtractResponse:
     return ExtractResponse(extracted_text="\n\n".join(t for t in page_texts if t), pages=len(pages))
 
 
+@app.get("/api/config")
+def public_config() -> dict:
+    """What this deployment offers: essay languages and the name it shows (see Settings)."""
+    st = get_settings()
+    kicker = st.app_kicker or ("A1 → C1 · telc · Goethe · DELF/DALF · " + " / ".join(x.upper() for x in st.language_list))
+    return {"languages": st.language_list, "title": st.app_title, "kicker": kicker}
+
+
 @app.get("/api/exams")
 def list_exams() -> dict:
     """Exam catalog (language -> exams -> levels -> tasks) the frontend builds its pickers from."""
-    return exams.catalog()
+    allowed = get_settings().language_list
+    return {lang: items for lang, items in exams.catalog().items() if lang in allowed}
 
 
 class GradeRequest(BaseModel):
@@ -126,8 +135,9 @@ class GradeRequest(BaseModel):
 
 @app.post("/api/grade", response_model=GradingResult)
 def grade(req: GradeRequest) -> GradingResult:
-    if req.language_code not in ("de", "en", "fr"):
-        raise HTTPException(400, "language_code must be one of: de, en, fr")
+    allowed = get_settings().language_list
+    if req.language_code not in allowed:
+        raise HTTPException(400, "language_code must be one of: " + ", ".join(allowed))
     if req.target_level not in ("A1", "A2", "B1", "B2", "C1"):
         raise HTTPException(400, "target_level must be one of: A1, A2, B1, B2, C1")
     if not req.text.strip():

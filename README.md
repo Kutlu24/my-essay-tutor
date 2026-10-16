@@ -113,3 +113,7 @@ With `ENABLE_GRAMMAR_CROSSCHECK=true` an independent rule-based pass (LanguageTo
 ## Links to DeutschGrammatikMeister
 
 For German essays every grammar error can carry the id of the matching rule on the separate [DeutschGrammatikMeister](https://github.com/Kutlu24/deutsch-grammatik-meister) site (A1–C1 rule pages). The rule catalog is `src/my_essay_tutor/grammar_rules.json`, a copy of that site's `regeln.json`; refresh it with `cp ../deutsch-grammatik-meister/regeln.json src/my_essay_tutor/grammar_rules.json`. Ids the model invents are dropped (`rules.py`), so a link always points to an existing rule. Set `GRAMMAR_SITE_URL` if the grammar site is hosted elsewhere than the default in the catalog.
+
+## Deployment settings
+
+`ALLOWED_LANGUAGES` (default `de,en,fr`), `APP_TITLE` (default `My Essay Tutor`) and `APP_KICKER` control what a deployment offers (`GET /api/config`). This standalone site checks compositions in German, English and French. The German Trainer platform embeds the same code as "Schreibwerkstatt" with `ALLOWED_LANGUAGES=de`, German only.

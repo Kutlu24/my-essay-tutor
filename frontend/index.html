@@ -309,8 +309,8 @@
 <body>
 <div class="wrap">
   <header>
-    <span class="kicker">A1 &rarr; C1 &middot; telc &middot; Goethe &middot; DELF/DALF &middot; DE / EN / FR</span>
-    <h1>My Essay Tutor</h1>
+    <span class="kicker" id="app-kicker">A1 &rarr; C1 &middot; telc &middot; Goethe &middot; DELF/DALF &middot; DE / EN / FR</span>
+    <h1 id="app-title">My Essay Tutor</h1>
     <p class="subtitle" data-i18n="subtitle">Upload a composition as a photo or PDF, or write it right here. It's checked for grammar and scored against the exam and level you pick.</p>
   </header>
 
@@ -477,6 +477,8 @@
 
 <script>
 (function () {
+  // Mounted at /ui/ (standalone) or /<mount>/ui/ (embedded in the German Trainer platform): keep API calls under the mount.
+  const API = location.pathname.replace(/\/ui(\/.*)?$/, '');
   const state = { ui: 'en', lastResult: null, mode: 'upload', file: null, lang: null, exam: null, level: null, task: null, catalog: null };
 
   const CRITERIA_LABELS = {
@@ -661,7 +663,7 @@
 
   function applyUi() {
     document.documentElement.lang = state.ui;
-    document.title = tr('pageTitle');
+    document.title = state.title || tr('pageTitle');
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = tr(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = tr(el.dataset.i18nPh); });
     document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', tr(el.dataset.i18nAria)); });
@@ -761,7 +763,26 @@
     });
   });
 
-  fetch('/api/exams').then(r => r.json()).then(c => { state.catalog = c; renderPickers(); })
+  // Deployment settings (languages offered, name shown) + exam catalog.
+  Promise.all([
+    fetch(API + '/api/config').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(API + '/api/exams').then(r => r.json())
+  ]).then(([cfg, c]) => {
+      state.catalog = c;
+      if (cfg) {
+        $('app-title').textContent = cfg.title;
+        $('app-kicker').textContent = cfg.kicker;
+        if (cfg.title !== 'My Essay Tutor') { state.title = cfg.title; document.title = cfg.title; }
+        document.querySelectorAll('#lang-row .lang-btn').forEach(b => { b.hidden = !cfg.languages.includes(b.dataset.lang); });
+        if (cfg.languages.length === 1) {  // single-language deployment: no language choice to make
+          $('lang-row').hidden = true;
+          $('lang-row').previousElementSibling.hidden = true;
+          const only = document.querySelector('#lang-row .lang-btn[data-lang="' + cfg.languages[0] + '"]');
+          if (only) only.click();
+        }
+      }
+      renderPickers();
+    })
     .catch(() => {
       error1.textContent = tr('errExams');
       error1.classList.add('visible');
@@ -788,7 +809,7 @@
     try {
       const form = new FormData();
       form.append('file', state.file);
-      const res = await fetch('/api/extract', { method: 'POST', body: form });
+      const res = await fetch(API + '/api/extract', { method: 'POST', body: form });
       if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
       const data = await res.json();
       $('extracted-text').value = data.extracted_text;
@@ -851,7 +872,7 @@
   const btnGrade = $('btn-grade'), spinnerGrade = $('spinner-grade'), error2 = $('error-2');
 
   async function postGrade(text) {
-    const res = await fetch('/api/grade', {
+    const res = await fetch(API + '/api/grade', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

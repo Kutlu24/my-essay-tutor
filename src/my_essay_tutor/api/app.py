@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from pydantic import BaseModel
 
-from .. import exams, grading, ocr, pdf_utils
+from .. import exams, grading, ocr, pdf_utils, seo
 from ..config import get_settings
 from ..models import GradingResult
 
@@ -41,6 +41,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+seo.install(app)
 
 
 @app.middleware("http")

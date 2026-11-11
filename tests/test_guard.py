@@ -77,3 +77,16 @@ def test_requests_refused_by_validation_are_not_charged(c, monkeypatch):
         assert c.post("/api/grade", json={**GRADE, "target_level": "Z9"}).status_code == 400
     assert [c.post("/api/grade", json=GRADE).status_code for _ in range(3)] == [502, 502, 429]
     assert guard.bucket("2a02:1:2:300::1") == guard.bucket("2a02:1:2:3ff::9") != guard.bucket("2a02:1:2:400::1")
+
+
+def test_pdf_pages_are_rendered_under_a_pixel_cap():
+    import pypdfium2 as pdfium
+    from my_essay_tutor import pdf_utils
+    assert pdf_utils.page_scale(595, 842, 2.0) == 2.0                      # A4 is untouched
+    s = pdf_utils.page_scale(14400, 14400, 2.0)                             # a "200 x 200 inch" page
+    assert s < 2.0 and (14400 * s) * (14400 * s) <= pdf_utils.MAX_PAGE_PIXELS * 1.001
+    doc = pdfium.PdfDocument.new(); doc.new_page(14400, 14400); doc.new_page(595, 842)
+    import io
+    buf = io.BytesIO(); doc.save(buf)
+    big, a4 = pdf_utils.pdf_to_images(buf.getvalue())
+    assert big.width * big.height <= pdf_utils.MAX_PAGE_PIXELS * 1.01 and a4.size == (1190, 1684)

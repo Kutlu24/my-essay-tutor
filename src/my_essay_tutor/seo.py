@@ -10,6 +10,7 @@ from __future__ import annotations
 import html
 import json
 import os
+import re
 
 from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse, Response
@@ -28,12 +29,27 @@ FAQ = [
 _LOCAL = ("localhost", "127.0.0.1", "testserver")
 
 
+_HOST = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?(?::\d{1,5})?$")
+
+
+def _safe_host(request: Request) -> str:
+    """The Host / X-Forwarded-Host headers are text from the client and end up inside HTML, the sitemap and robots.txt:
+    only a plain host name (optionally with a port) is accepted, anything else falls back."""
+    for cand in (request.headers.get("x-forwarded-host", "").split(",")[0].strip(), request.url.netloc):
+        if cand and _HOST.match(cand):
+            return cand
+    return "localhost"
+
+
 def site_url(request: Request) -> str:
     env = os.environ.get("SITE_URL")
     if env:
         return env.rstrip("/")
-    host = request.headers.get("x-forwarded-host") or request.url.netloc
-    proto = request.headers.get("x-forwarded-proto") or request.url.scheme
+    render = os.environ.get("RENDER_EXTERNAL_URL")  # set by Render itself: on Render no request header decides the origin
+    if render and re.match(r"^https?://[A-Za-z0-9.-]+(:\d+)?/?$", render):
+        return render.rstrip("/")
+    host = _safe_host(request)
+    proto = "http"  # local development; everything else is https (set just below)
     if host.split(":")[0] not in _LOCAL:
         proto = "https"
     return f"{proto}://{host}"
@@ -62,9 +78,10 @@ def install(app: FastAPI) -> None:
                "isAccessibleForFree": True, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}},
               {"@context": "https://schema.org", "@type": "FAQPage",
                "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in FAQ]}]
-        head = (f'<link rel="canonical" href="{url}">\n<meta property="og:title" content="{html.escape(TITLE)}">\n'
-                f'<meta property="og:description" content="{html.escape(DESC)}">\n<meta property="og:url" content="{url}">\n'
-                f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>\n')
+        url_attr = html.escape(url, quote=True)
+        head = (f'<link rel="canonical" href="{url_attr}">\n<meta property="og:title" content="{html.escape(TITLE)}">\n'
+                f'<meta property="og:description" content="{html.escape(DESC)}">\n<meta property="og:url" content="{url_attr}">\n'
+                f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False).replace("<", "\\u003c")}</script>\n')
         page = page.replace("</head>", head + "</head>", 1).replace("</body>", _about() + "\n</body>", 1)
         headers = {k: v for k, v in response.headers.items() if k.lower() not in ("content-length", "content-encoding")}
         return Response(content=page, status_code=200, headers=headers, media_type="text/html")
